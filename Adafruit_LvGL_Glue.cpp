@@ -45,8 +45,8 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
     static lv_coord_t last_x = 0;
     static lv_coord_t last_y = 0;
 
-    data->state = LV_INDEV_STATE_REL; // Default state is RELEASED
-    data->point.x = last_x;           // with the last-pressed coordinates
+    data->state   = LV_INDEV_STATE_REL; // Default state is RELEASED
+    data->point.x = last_x;             // with the last-pressed coordinates
     data->point.y = last_y;
 
     // Get pointer to glue object from indev user data
@@ -54,23 +54,23 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
 
     if(glue->touchscreen->readRegister8(STMPE_TSC_CTRL) & 0x80) { // Touched?
         TS_Point p = glue->touchscreen->getPoint();
-        data->state = LV_INDEV_STATE_PR;
+        data->state = LV_INDEV_STATE_PR; // Is PRESSED
         switch(glue->display->getRotation()) {
           case 0:
-            last_x = map(p.x, TS_MINX, TS_MAXX, 0, glue->display->width() -1);
+            last_x = map(p.x, TS_MAXX, TS_MINX, 0, glue->display->width() -1);
             last_y = map(p.y, TS_MINY, TS_MAXY, 0, glue->display->height()-1);
             break;
           case 1:
             last_x = map(p.y, TS_MINY, TS_MAXY, 0, glue->display->width() -1);
-            last_y = map(p.x, TS_MAXX, TS_MINX, 0, glue->display->height()-1);
+            last_y = map(p.x, TS_MINX, TS_MAXX, 0, glue->display->height()-1);
             break;
           case 2:
-            last_x = map(p.x, TS_MAXX, TS_MINX, 0, glue->display->width() -1);
+            last_x = map(p.x, TS_MINX, TS_MAXX, 0, glue->display->width() -1);
             last_y = map(p.y, TS_MAXY, TS_MINY, 0, glue->display->height()-1);
             break;
           case 3:
             last_x = map(p.y, TS_MAXY, TS_MINY, 0, glue->display->width() -1);
-            last_y = map(p.x, TS_MINX, TS_MAXX, 0, glue->display->height()-1);
+            last_y = map(p.x, TS_MAXX, TS_MINX, 0, glue->display->height()-1);
             break;
         }
         data->point.x = last_x;
@@ -145,6 +145,7 @@ Adafruit_LvGL_Glue::~Adafruit_LvGL_Glue(void) {
 // should have previously called corresponding begin() functions and checked
 // return states before invoking this), they are NOT initialized here. Debug
 // arg is only used if LV_USE_LOG is configured in LittleLVGL's lv_conf.h.
+// touch arg can be NULL if using LittlevGL as a passive widget display.
 LvGLStatus Adafruit_LvGL_Glue::begin(
   Adafruit_SPITFT *tft, Adafruit_STMPE610 *touch, bool debug) {
 
@@ -173,11 +174,13 @@ LvGLStatus Adafruit_LvGL_Glue::begin(
         lv_disp_drv_register(&lv_disp_drv);
 
         // Initialize LvGL input device (touchscreen already started)
-        lv_indev_drv_init(&lv_indev_drv);               // Basic init
-        lv_indev_drv.type      = LV_INDEV_TYPE_POINTER; // Is pointer device
-        lv_indev_drv.read_cb   = touchscreen_read;      // Reg read callback
-        lv_indev_drv.user_data = (lv_indev_drv_user_data_t)this;
-        lv_input_dev_ptr       = lv_indev_drv_register(&lv_indev_drv);
+        if((touch)) { // Can also pass NULL if passive widget display
+            lv_indev_drv_init(&lv_indev_drv);               // Basic init
+            lv_indev_drv.type      = LV_INDEV_TYPE_POINTER; // Is pointer dev
+            lv_indev_drv.read_cb   = touchscreen_read;      // Read callback
+            lv_indev_drv.user_data = (lv_indev_drv_user_data_t)this;
+            lv_input_dev_ptr       = lv_indev_drv_register(&lv_indev_drv);
+        }
 
         display     = tft;   // Init these before setting up timer
         touchscreen = touch;
@@ -221,7 +224,6 @@ LvGLStatus Adafruit_LvGL_Glue::begin(
             if(status == LVGL_OK) {
                 compare = (48000000 / divider) / freq;
                 // Initialize timer
-                zerotimer->enable(false);
                 zerotimer->configure(prescaler, TC_COUNTER_SIZE_16BIT,
                   TC_WAVE_GENERATION_MATCH_PWM);
                 zerotimer->setCompare(0, compare);
