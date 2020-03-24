@@ -42,19 +42,17 @@ static void timerCallback0(void) {
 
 static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
                              lv_indev_data_t *data) {
-    static lv_coord_t last_x = 0;
-    static lv_coord_t last_y = 0;
-
-    data->state   = LV_INDEV_STATE_REL; // Default state is RELEASED
-    data->point.x = last_x;             // with the last-pressed coordinates
-    data->point.y = last_y;
+    static lv_coord_t last_x = 0, last_y = 0;
+    uint8_t           fifo; // Number of points in touchscreen FIFO
+    bool              moar = false;
 
     // Get pointer to glue object from indev user data
     Adafruit_LvGL_Glue *glue = (Adafruit_LvGL_Glue *)indev_drv->user_data;
 
-    if(glue->touchscreen->readRegister8(STMPE_TSC_CTRL) & 0x80) { // Touched?
-        TS_Point p = glue->touchscreen->getPoint();
+    if((fifo = glue->touchscreen->bufferSize())) { // 1 or more points await
         data->state = LV_INDEV_STATE_PR; // Is PRESSED
+        TS_Point p  = glue->touchscreen->getPoint();
+        // Serial.printf("%d %d %d\r\n", p.x, p.y, p.z);
         switch(glue->display->getRotation()) {
           case 0:
             last_x = map(p.x, TS_MAXX, TS_MINX, 0, glue->display->width() -1);
@@ -73,11 +71,14 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
             last_y = map(p.x, TS_MAXX, TS_MINX, 0, glue->display->height()-1);
             break;
         }
-        data->point.x = last_x;
-        data->point.y = last_y;
+        moar = (fifo > 1); // true if more data in FIFO, false if last point
+    } else { // FIFO empty
+        data->state = LV_INDEV_STATE_REL; // Is RELEASED
     }
 
-    return !glue->touchscreen->bufferEmpty();
+    data->point.x = last_x; // Last-pressed coordinates
+    data->point.y = last_y;
+    return moar;
 }
 
 
