@@ -34,51 +34,91 @@ static void timerCallback0(void) {
 
 // TOUCHSCREEN STUFF -------------------------------------------------------
 
-// Calibration data for the raw touch data to the screen coordinates
+// STMPE610 calibration for raw touch data
 #define TS_MINX 100
 #define TS_MAXX 3800
 #define TS_MINY 100
 #define TS_MAXY 3750
 
+// Same, for ADC touchscreen
+#define ADC_XMIN 325
+#define ADC_XMAX 750
+#define ADC_YMIN 240
+#define ADC_YMAX 840
+
 static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
                              lv_indev_data_t *data) {
     static lv_coord_t last_x = 0, last_y = 0;
-    uint8_t           fifo; // Number of points in touchscreen FIFO
-    bool              moar = false;
 
     // Get pointer to glue object from indev user data
     Adafruit_LvGL_Glue *glue = (Adafruit_LvGL_Glue *)indev_drv->user_data;
+    Adafruit_SPITFT    *disp = glue->display;
 
-    if((fifo = glue->touchscreen->bufferSize())) { // 1 or more points await
-        data->state = LV_INDEV_STATE_PR; // Is PRESSED
-        TS_Point p  = glue->touchscreen->getPoint();
-        // Serial.printf("%d %d %d\r\n", p.x, p.y, p.z);
-        switch(glue->display->getRotation()) {
-          case 0:
-            last_x = map(p.x, TS_MAXX, TS_MINX, 0, glue->display->width() -1);
-            last_y = map(p.y, TS_MINY, TS_MAXY, 0, glue->display->height()-1);
-            break;
-          case 1:
-            last_x = map(p.y, TS_MINY, TS_MAXY, 0, glue->display->width() -1);
-            last_y = map(p.x, TS_MINX, TS_MAXX, 0, glue->display->height()-1);
-            break;
-          case 2:
-            last_x = map(p.x, TS_MINX, TS_MAXX, 0, glue->display->width() -1);
-            last_y = map(p.y, TS_MAXY, TS_MINY, 0, glue->display->height()-1);
-            break;
-          case 3:
-            last_x = map(p.y, TS_MAXY, TS_MINY, 0, glue->display->width() -1);
-            last_y = map(p.x, TS_MAXX, TS_MINX, 0, glue->display->height()-1);
-            break;
+    if(glue->is_adc_touch) {
+        TouchScreen *touch = (TouchScreen *)glue->touchscreen;
+        TSPoint      p     = touch->getPoint();
+        //Serial.printf("%d %d %d\r\n", p.x, p.y, p.z);
+        if(p.z > touch->pressureThreshhold) {
+            data->state = LV_INDEV_STATE_PR; // Is PRESSED
+            switch(glue->display->getRotation()) {
+              case 0:
+                last_x = map(p.x, ADC_XMIN, ADC_XMAX, 0, disp->width()  - 1);
+                last_y = map(p.y, ADC_YMAX, ADC_YMIN, 0, disp->height() - 1);
+                break;
+              case 1:
+                last_x = map(p.y, ADC_YMAX, ADC_YMIN, 0, disp->width()  - 1);
+                last_y = map(p.x, ADC_XMAX, ADC_XMIN, 0, disp->height() - 1);
+                break;
+              case 2:
+                last_x = map(p.x, ADC_XMAX, ADC_XMIN, 0, disp->width()  - 1);
+                last_y = map(p.y, ADC_YMIN, ADC_YMAX, 0, disp->height() - 1);
+                break;
+              case 3:
+                last_x = map(p.y, ADC_YMIN, ADC_YMAX, 0, disp->width()  - 1);
+                last_y = map(p.x, ADC_XMIN, ADC_XMAX, 0, disp->height() - 1);
+                break;
+            }
+        } else {
+            data->state = LV_INDEV_STATE_REL; // Is RELEASED
         }
-        moar = (fifo > 1); // true if more data in FIFO, false if last point
-    } else { // FIFO empty
-        data->state = LV_INDEV_STATE_REL; // Is RELEASED
-    }
+        data->point.x = last_x; // Last-pressed coordinates
+        data->point.y = last_y;
+        return false; // No buffering of touch data
+    } else {
+        uint8_t fifo; // Number of points in touchscreen FIFO
+        bool    moar = false;
+        Adafruit_STMPE610 *touch = (Adafruit_STMPE610 *)glue->touchscreen;
+        if((fifo = touch->bufferSize())) { // 1 or more points await
+            data->state = LV_INDEV_STATE_PR; // Is PRESSED
+            TS_Point p  = touch->getPoint();
+            // Serial.printf("%d %d %d\r\n", p.x, p.y, p.z);
+            switch(glue->display->getRotation()) {
+              case 0:
+                last_x = map(p.x, TS_MAXX, TS_MINX, 0, disp->width()  - 1);
+                last_y = map(p.y, TS_MINY, TS_MAXY, 0, disp->height() - 1);
+                break;
+              case 1:
+                last_x = map(p.y, TS_MINY, TS_MAXY, 0, disp->width()  - 1);
+                last_y = map(p.x, TS_MINX, TS_MAXX, 0, disp->height() - 1);
+                break;
+              case 2:
+                last_x = map(p.x, TS_MINX, TS_MAXX, 0, disp->width()  - 1);
+                last_y = map(p.y, TS_MAXY, TS_MINY, 0, disp->height() - 1);
+                break;
+              case 3:
+                last_x = map(p.y, TS_MAXY, TS_MINY, 0, disp->width()  - 1);
+                last_y = map(p.x, TS_MAXX, TS_MINX, 0, disp->height() - 1);
+                break;
+            }
+            moar = (fifo > 1); // true if more in FIFO, false if last point
+        } else { // FIFO empty
+            data->state = LV_INDEV_STATE_REL; // Is RELEASED
+        }
 
-    data->point.x = last_x; // Last-pressed coordinates
-    data->point.y = last_y;
-    return moar;
+        data->point.x = last_x; // Last-pressed coordinates
+        data->point.y = last_y;
+        return moar;
+    }
 }
 
 
@@ -102,15 +142,36 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
 static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
   lv_color_t *color_p) {
     // Get pointer to glue object from indev user data
-    Adafruit_LvGL_Glue *glue = (Adafruit_LvGL_Glue *)disp->user_data;
+    Adafruit_LvGL_Glue *glue    = (Adafruit_LvGL_Glue *)disp->user_data;
+    Adafruit_SPITFT    *display = glue->display;
 
-    glue->display->startWrite();
+    // NOTE TO FUTURE SELF: non-blocking DMA writes might be a bad idea,
+    // since LittlevGL isn't aware writes are in the background and may
+    // go modifying a buffer in-transit (most GFX DMA programs are aware
+    // of this and double-buffer any screen graphics).
+
+    if(!glue->first_frame) {
+      display->dmaWait();  // Wait for prior DMA transfer to complete
+      display->endWrite(); // End transaction from any prior call
+    } else {
+        glue->first_frame = false;
+    }
+
     uint16_t width  = (area->x2 - area->x1 + 1);
     uint16_t height = (area->y2 - area->y1 + 1);
-    glue->display->setAddrWindow(area->x1, area->y1, width, height);
-    glue->display->writePixels((uint16_t *)color_p, width * height, false,
+    display->startWrite();
+    display->setAddrWindow(area->x1, area->y1, width, height);
+#if 0
+    display->writePixels((uint16_t *)color_p, width * height, false,
       !LV_COLOR_16_SWAP);
-    glue->display->endWrite();
+#endif
+// Use blocking write for now, for reasons noted above:
+    display->writePixels((uint16_t *)color_p, width * height, true,
+      !LV_COLOR_16_SWAP);
+    // If SPI touch is used, must endWrite screen now to finish transaction
+    if(glue->touchscreen && !glue->is_adc_touch) {
+        display->endWrite();
+    }
     lv_disp_flush_ready(disp);
 }
 
@@ -127,7 +188,8 @@ static lv_log_print_g_cb_t lv_debug(lv_log_level_t level, const char *file,
 // GLUE LIB FUNCTIONS ------------------------------------------------------
 
 // Constructor, just initializes minimal variables.
-Adafruit_LvGL_Glue::Adafruit_LvGL_Glue(void) : lv_pixel_buf(NULL) {
+Adafruit_LvGL_Glue::Adafruit_LvGL_Glue(void) : lv_pixel_buf(NULL),
+  first_frame(true) {
 #if defined(ARDUINO_ARCH_SAMD)
     zerotimer = NULL;
 #endif
@@ -142,13 +204,33 @@ Adafruit_LvGL_Glue::~Adafruit_LvGL_Glue(void) {
     // Probably other stuff that could be deallocated here
 }
 
+// begin() function is overloaded for STMPE610 touch, ADC touch, or none.
 // Pass in POINTERS to ALREADY INITIALIZED display & touch objects (user code
 // should have previously called corresponding begin() functions and checked
 // return states before invoking this), they are NOT initialized here. Debug
 // arg is only used if LV_USE_LOG is configured in LittleLVGL's lv_conf.h.
-// touch arg can be NULL if using LittlevGL as a passive widget display.
+// touch arg can be NULL (or left off) if using LittlevGL as a passive widget
+// display.
+
 LvGLStatus Adafruit_LvGL_Glue::begin(
   Adafruit_SPITFT *tft, Adafruit_STMPE610 *touch, bool debug) {
+    is_adc_touch = false;
+    return begin(tft, (void *)touch, debug);
+}
+
+LvGLStatus Adafruit_LvGL_Glue::begin(
+  Adafruit_SPITFT *tft, TouchScreen *touch, bool debug) {
+    is_adc_touch = true;
+    return begin(tft, (void *)touch, debug);
+}
+
+LvGLStatus Adafruit_LvGL_Glue::begin(
+  Adafruit_SPITFT *tft, bool debug) {
+    return begin(tft, (void *)NULL, debug);
+}
+
+LvGLStatus Adafruit_LvGL_Glue::begin(
+  Adafruit_SPITFT *tft, void *touch, bool debug) {
 
     lv_init();
 #if(LV_USE_LOG)
@@ -184,7 +266,7 @@ LvGLStatus Adafruit_LvGL_Glue::begin(
         }
 
         display     = tft;   // Init these before setting up timer
-        touchscreen = touch;
+        touchscreen = (void *)touch;
 
 #if defined(ARDUINO_ARCH_SAMD)
         // status is still ERR_ALLOC until proven otherwise...

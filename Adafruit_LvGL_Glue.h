@@ -3,7 +3,8 @@
 
 #include <lvgl.h>                 // LittlevGL core lib
 #include <Adafruit_SPITFT.h>      // GFX lib for SPI and parallel displays
-#include <Adafruit_STMPE610.h>    // Touchscreen lib
+#include <TouchScreen.h>          // ADC touchscreen lib
+#include <Adafruit_STMPE610.h>    // SPI Touchscreen lib
 #if defined(ARDUINO_ARCH_SAMD)
   #include <Adafruit_ZeroTimer.h> // SAMD-specific timer lib
 #elif defined(ESP32)
@@ -20,11 +21,20 @@ class Adafruit_LvGL_Glue {
   public:
     Adafruit_LvGL_Glue(void);
     ~Adafruit_LvGL_Glue(void);
-    LvGLStatus begin(Adafruit_SPITFT *tft, Adafruit_STMPE610 *touch,
-                     bool debug=false);
-    Adafruit_SPITFT    *display;     // Gotta be public for LvGL callbacks,
-    Adafruit_STMPE610  *touchscreen; // please don't touch!
+    // Different begin() funcs for STMPE610, ADC or no touch
+    LvGLStatus          begin(Adafruit_SPITFT *tft, Adafruit_STMPE610 *touch,
+                              bool debug=false);
+    LvGLStatus          begin(Adafruit_SPITFT *tft, TouchScreen *touch,
+                              bool debug=false);
+    LvGLStatus          begin(Adafruit_SPITFT *tft, bool debug=false);
+    // These items need to be public for some internal callbacks,
+    // but should be avoided by user code please!
+    Adafruit_SPITFT    *display;
+    void               *touchscreen;
+    bool                is_adc_touch;
+    bool                first_frame;
   private:
+    LvGLStatus          begin(Adafruit_SPITFT *tft, void *touch, bool debug);
     lv_disp_drv_t       lv_disp_drv;
     lv_disp_buf_t       lv_disp_buf;
     lv_color_t         *lv_pixel_buf;
