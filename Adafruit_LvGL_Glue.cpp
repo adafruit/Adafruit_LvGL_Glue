@@ -8,8 +8,10 @@ static const int lv_tick_interval_ms = 10;
 
 #if defined(ARDUINO_ARCH_SAMD) // --------------------------------------
 
-#define TIMER_NUM 3
-#define TIMER_ISR TC3_Handler
+// Because of the way timer/counters are paired, and because parallel TFT
+// uses timer 2 for write strobe, this needs to use timer 4 or above...
+#define TIMER_NUM 4
+#define TIMER_ISR TC4_Handler
 
 // Interrupt service routine for zerotimer object
 void TIMER_ISR(void) {
@@ -49,6 +51,7 @@ static void timerCallback0(void) {
 static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
                              lv_indev_data_t *data) {
     static lv_coord_t last_x = 0, last_y = 0;
+    static uint8_t    release_count = 0;
 
     // Get pointer to glue object from indev user data
     Adafruit_LvGL_Glue *glue = (Adafruit_LvGL_Glue *)indev_drv->user_data;
@@ -58,8 +61,20 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
         TouchScreen *touch = (TouchScreen *)glue->touchscreen;
         TSPoint      p     = touch->getPoint();
         //Serial.printf("%d %d %d\r\n", p.x, p.y, p.z);
-        if(p.z > touch->pressureThreshhold) {
-            data->state = LV_INDEV_STATE_PR; // Is PRESSED
+        // Having an issue with spurious z=0 results from TouchScreen lib.
+        // Since touch is polled periodically, workaround is to watch for
+        // several successive z=0 results, and only then regard it as
+        // a release event (otherwise still touched).
+        if(p.z < touch->pressureThreshhold) {     // A zero-ish value
+            release_count += (release_count < 255);
+            if(release_count >= 4) {
+                data->state = LV_INDEV_STATE_REL; // Is REALLY RELEASED
+            } else {
+                data->state = LV_INDEV_STATE_PR;  // Is STILL PRESSED
+            }
+        } else {
+            release_count = 0;                    // Reset release counter
+            data->state   = LV_INDEV_STATE_PR;    // Is PRESSED
             switch(glue->display->getRotation()) {
               case 0:
                 last_x = map(p.x, ADC_XMIN, ADC_XMAX, 0, disp->width()  - 1);
@@ -78,12 +93,10 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
                 last_y = map(p.x, ADC_XMIN, ADC_XMAX, 0, disp->height() - 1);
                 break;
             }
-        } else {
-            data->state = LV_INDEV_STATE_REL; // Is RELEASED
         }
         data->point.x = last_x; // Last-pressed coordinates
         data->point.y = last_y;
-        return false; // No buffering of touch data
+        return false; // No buffering of ADC touch data
     } else {
         uint8_t fifo; // Number of points in touchscreen FIFO
         bool    moar = false;
@@ -127,9 +140,10 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
 #if LV_COLOR_DEPTH != 16
   #pragma error("LV_COLOR_DEPTH must be 16")
 #endif
-#if LV_COLOR_16_SWAP != 0
-  #pragma message("Set LV_COLOR_16_SWAP to 0 for best display performance")
-#endif
+// This might no longer be true, since using blocking writes, so disabled:
+//#if LV_COLOR_16_SWAP != 0
+//  #pragma message("Set LV_COLOR_16_SWAP to 0 for best display performance")
+//#endif
 #ifdef _SAMD21_
   #define LV_BUFFER_ROWS 8  // Don't hog all the RAM on SAMD21
 #else
@@ -150,12 +164,12 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
     // go modifying a buffer in-transit (most GFX DMA programs are aware
     // of this and double-buffer any screen graphics).
 
-    if(!glue->first_frame) {
-      display->dmaWait();  // Wait for prior DMA transfer to complete
-      display->endWrite(); // End transaction from any prior call
-    } else {
-        glue->first_frame = false;
-    }
+//    if(!glue->first_frame) {
+//      display->dmaWait();  // Wait for prior DMA transfer to complete
+//      display->endWrite(); // End transaction from any prior call
+//    } else {
+//        glue->first_frame = false;
+//    }
 
     uint16_t width  = (area->x2 - area->x1 + 1);
     uint16_t height = (area->y2 - area->y1 + 1);
@@ -164,14 +178,21 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
 #if 0
     display->writePixels((uint16_t *)color_p, width * height, false,
       !LV_COLOR_16_SWAP);
-#endif
-// Use blocking write for now, for reasons noted above:
+#else
+    // Use blocking write for now, for reasons noted above:
+  #if defined(ADAFRUIT_PYPORTAL)
+    display->writePixels((uint16_t *)color_p, width * height, true,
+      LV_COLOR_16_SWAP);
+  #else
     display->writePixels((uint16_t *)color_p, width * height, true,
       !LV_COLOR_16_SWAP);
-    // If SPI touch is used, must endWrite screen now to finish transaction
-    if(glue->touchscreen && !glue->is_adc_touch) {
-        display->endWrite();
-    }
+  #endif
+    display->endWrite();
+#endif
+//    // If SPI touch is used, must endWrite screen now to finish transaction
+//    if(glue->touchscreen && !glue->is_adc_touch) {
+//        display->endWrite();
+//    }
     lv_disp_flush_ready(disp);
 }
 
