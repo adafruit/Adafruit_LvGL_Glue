@@ -25,7 +25,9 @@ static void timerCallback0(void) {
 
 #elif defined(ESP32) // ------------------------------------------------
 
-// Things will go here, using Ticker library (part of ESP32 board support).
+static void lv_tick_handler(void) {
+    lv_tick_inc(lv_tick_interval_ms);
+}
 
 #elif defined(NRF52_SERIES) // -----------------------------------------
 
@@ -162,7 +164,9 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
     // NOTE TO FUTURE SELF: non-blocking DMA writes might be a bad idea,
     // since LittlevGL isn't aware writes are in the background and may
     // go modifying a buffer in-transit (most GFX DMA programs are aware
-    // of this and double-buffer any screen graphics).
+    // of this and double-buffer any screen graphics). SO, this is all
+    // commented out for now...might revisit later, maybe LittlevGL can
+    // be tweaked to alternate buffers.
 
 //    if(!glue->first_frame) {
 //      display->dmaWait();  // Wait for prior DMA transfer to complete
@@ -175,10 +179,8 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
     uint16_t height = (area->y2 - area->y1 + 1);
     display->startWrite();
     display->setAddrWindow(area->x1, area->y1, width, height);
-#if 0
-    display->writePixels((uint16_t *)color_p, width * height, false,
-      !LV_COLOR_16_SWAP);
-#else
+//    display->writePixels((uint16_t *)color_p, width * height, false,
+//      !LV_COLOR_16_SWAP);
     // Use blocking write for now, for reasons noted above:
   #if defined(ADAFRUIT_PYPORTAL)
     display->writePixels((uint16_t *)color_p, width * height, true,
@@ -188,7 +190,6 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
       !LV_COLOR_16_SWAP);
   #endif
     display->endWrite();
-#endif
 //    // If SPI touch is used, must endWrite screen now to finish transaction
 //    if(glue->touchscreen && !glue->is_adc_touch) {
 //        display->endWrite();
@@ -289,7 +290,10 @@ LvGLStatus Adafruit_LvGL_Glue::begin(
         display     = tft;   // Init these before setting up timer
         touchscreen = (void *)touch;
 
+        // TIMER SETUP is architecture-specific ----------------------------
+
 #if defined(ARDUINO_ARCH_SAMD)
+
         // status is still ERR_ALLOC until proven otherwise...
         if((zerotimer = new Adafruit_ZeroTimer(TIMER_NUM))) {
             uint8_t            divider   = 1;
@@ -336,17 +340,19 @@ LvGLStatus Adafruit_LvGL_Glue::begin(
                 zerotimer->enable(true);
             }
         }
-    }
 
 #elif defined(ESP32)
 
-    // ESP32 timer setup goes here
+        tick.attach_ms(lv_tick_interval_ms, lv_tick_handler);
+        status = LVGL_OK;
 
 #elif defined(NRF52_SERIES)
 
     // NRF52 timer setup goes here
 
-#endif // end timer setup
+#endif // end timer setup --------------------------------------------------
+
+    }
 
     if(status != LVGL_OK) {
         delete[] lv_pixel_buf;

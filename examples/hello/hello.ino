@@ -14,20 +14,25 @@
   #define TFT_RST       24 // Reset pin
   #define TFT_RD         9 // Read-strobe pin
   #define TFT_BACKLIGHT 25
-  // ILI9341 with 8-bit parallel interface:
+  #define YP            A4
+  #define XM            A7
+  #define YM            A6
+  #define XP            A5
   Adafruit_ILI9341 tft = Adafruit_ILI9341(tft8bitbus, TFT_D0, TFT_WR, TFT_DC, TFT_CS, TFT_RST, TFT_RD);
-  #define YP A4
-  #define XM A7
-  #define YM A6
-  #define XP A5
   TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 #else // FeatherWing
   #include <Adafruit_STMPE610.h>
-  #define ROTATION   1
-  #define TFT_CS     9
-  #define TFT_DC    10
+  #define ROTATION       1
+ #if defined(ESP32)
+   #define STMPE_CS     32
+   #define TFT_CS       15
+   #define TFT_DC       33
+ #else
+  #define TFT_CS         9
+  #define TFT_DC        10
+  #define STMPE_CS       6
+ #endif
   Adafruit_ILI9341  tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
-  #define STMPE_CS   6
   Adafruit_STMPE610 ts  = Adafruit_STMPE610(STMPE_CS);
 #endif
 

@@ -43,6 +43,7 @@ class Adafruit_LvGL_Glue {
 #if defined(ARDUINO_ARCH_SAMD)
     Adafruit_ZeroTimer *zerotimer;
 #elif defined(ESP32)
+    Ticker              tick;
 #elif defined(NRF52_SERIES)
 #endif
 };
