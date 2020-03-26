@@ -40,7 +40,6 @@ Adafruit_LvGL_Glue glue;
 
 void setup(void) {
   Serial.begin(115200);
-while(!Serial);
 
   tft.begin();
   tft.setRotation(ROTATION); // Landscape orientation

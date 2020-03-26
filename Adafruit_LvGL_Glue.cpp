@@ -31,7 +31,20 @@ static void lv_tick_handler(void) {
 
 #elif defined(NRF52_SERIES) // -----------------------------------------
 
-// Things will go here, see Adafruit_Protomatter for timer insights.
+#define TIMER_ID   NRF_TIMER4
+#define TIMER_IRQN TIMER4_IRQn
+#define TIMER_ISR  TIMER4_IRQHandler
+#define TIMER_FREQ 16000000
+
+extern "C" {
+    // Timer interrupt service routine
+    void TIMER_ISR(void) {
+        if(TIMER_ID->EVENTS_COMPARE[0]) {
+            TIMER_ID->EVENTS_COMPARE[0] = 0;
+        }
+        lv_tick_inc(lv_tick_interval_ms);
+    }
+}
 
 #endif
 
@@ -100,8 +113,8 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
         data->point.y = last_y;
         return false; // No buffering of ADC touch data
     } else {
-        uint8_t fifo; // Number of points in touchscreen FIFO
-        bool    moar = false;
+        uint8_t            fifo; // Number of points in touchscreen FIFO
+        bool               moar  = false;
         Adafruit_STMPE610 *touch = (Adafruit_STMPE610 *)glue->touchscreen;
         if((fifo = touch->bufferSize())) { // 1 or more points await
             data->state = LV_INDEV_STATE_PR; // Is PRESSED
@@ -126,6 +139,16 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
                 break;
             }
             moar = (fifo > 1); // true if more in FIFO, false if last point
+#if defined(NRF52_SERIES)
+            // Not sure what's up here, but nRF doesn't seem to always poll
+            // the FIFO size correctly, causing false release events. If it
+            // looks like we've read the last point from the FIFO, pause
+            // briefly to allow any more FIFO events to pile up. This
+            // doesn't seem to be necessary on SAMD or ESP32.
+            if(!moar) {
+                delay(50);
+            }
+#endif
         } else { // FIFO empty
             data->state = LV_INDEV_STATE_REL; // Is RELEASED
         }
@@ -186,8 +209,14 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
     display->writePixels((uint16_t *)color_p, width * height, true,
       LV_COLOR_16_SWAP);
   #else
-    display->writePixels((uint16_t *)color_p, width * height, true,
-      !LV_COLOR_16_SWAP);
+    // MESSY, still have some endian stuff to sort out here
+    #if defined(NRF52_SERIES)
+      display->writePixels((uint16_t *)color_p, width * height, true,
+        LV_COLOR_16_SWAP);
+    #else
+      display->writePixels((uint16_t *)color_p, width * height, true,
+        !LV_COLOR_16_SWAP);
+    #endif
   #endif
     display->endWrite();
 //    // If SPI touch is used, must endWrite screen now to finish transaction
@@ -292,7 +321,7 @@ LvGLStatus Adafruit_LvGL_Glue::begin(
 
         // TIMER SETUP is architecture-specific ----------------------------
 
-#if defined(ARDUINO_ARCH_SAMD)
+#if defined(ARDUINO_ARCH_SAMD) // --------------------------------------
 
         // status is still ERR_ALLOC until proven otherwise...
         if((zerotimer = new Adafruit_ZeroTimer(TIMER_NUM))) {
@@ -341,14 +370,31 @@ LvGLStatus Adafruit_LvGL_Glue::begin(
             }
         }
 
-#elif defined(ESP32)
+#elif defined(ESP32) // ------------------------------------------------
 
         tick.attach_ms(lv_tick_interval_ms, lv_tick_handler);
         status = LVGL_OK;
 
-#elif defined(NRF52_SERIES)
+#elif defined(NRF52_SERIES) // -----------------------------------------
 
-    // NRF52 timer setup goes here
+        TIMER_ID->TASKS_STOP  = 1; // Stop timer
+        TIMER_ID->MODE        = TIMER_MODE_MODE_Timer; // Not counter mode
+        TIMER_ID->TASKS_CLEAR = 1;
+        TIMER_ID->BITMODE     = TIMER_BITMODE_BITMODE_16Bit <<
+                                TIMER_BITMODE_BITMODE_Pos;
+        TIMER_ID->PRESCALER   = 0; // 1:1 prescale (16 MHz)
+        TIMER_ID->INTENSET    = TIMER_INTENSET_COMPARE0_Enabled <<
+                                TIMER_INTENSET_COMPARE0_Pos; // Event 0 int
+        TIMER_ID->CC[0]       = TIMER_FREQ / (lv_tick_interval_ms * 1000);
+
+        NVIC_DisableIRQ(TIMER_IRQN);
+        NVIC_ClearPendingIRQ(TIMER_IRQN);
+        NVIC_SetPriority(TIMER_IRQN, 2); // Lower priority than soft device
+        NVIC_EnableIRQ(TIMER_IRQN);
+
+        TIMER_ID->TASKS_START = 1; // Start timer
+
+        status = LVGL_OK;
 
 #endif // end timer setup --------------------------------------------------
 
