@@ -191,6 +191,11 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
     // commented out for now...might revisit later, maybe LittlevGL can
     // be tweaked to alternate buffers.
 
+    // A-HA NOTE TO FUTURE SELF: LittlevGL already supports this! Third
+    // argument to lv_disp_buf_init is a second pixel buffer (currently
+    // passing NULL -- change this if using a second buf w DMA).
+    // SAMD, ESP32 and nRF52 all have some DMA capacity in SPITFT.
+
 //    if(!glue->first_frame) {
 //      display->dmaWait();  // Wait for prior DMA transfer to complete
 //      display->endWrite(); // End transaction from any prior call
