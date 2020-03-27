@@ -116,6 +116,10 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
         uint8_t            fifo; // Number of points in touchscreen FIFO
         bool               moar  = false;
         Adafruit_STMPE610 *touch = (Adafruit_STMPE610 *)glue->touchscreen;
+        // Before accessing SPI touchscreen, wait on any in-progress
+        // DMA screen transfer to finish (shared bus).
+        disp->dmaWait();
+        disp->endWrite();
         if((fifo = touch->bufferSize())) { // 1 or more points await
             data->state = LV_INDEV_STATE_PR; // Is PRESSED
             TS_Point p  = touch->getPoint();
@@ -169,10 +173,12 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
 //#if LV_COLOR_16_SWAP != 0
 //  #pragma message("Set LV_COLOR_16_SWAP to 0 for best display performance")
 //#endif
+
+// Actual RAM usage will be 2X these figures, since using 2 DMA buffers...
 #ifdef _SAMD21_
-  #define LV_BUFFER_ROWS 8  // Don't hog all the RAM on SAMD21
+  #define LV_BUFFER_ROWS 4  // Don't hog all the RAM on SAMD21
 #else
-  #define LV_BUFFER_ROWS 16 // Most others have a bit more space
+  #define LV_BUFFER_ROWS 8 // Most others have a bit more space
 #endif
 
 // This is the flush function required for LittlevGL screen updates.
@@ -184,50 +190,25 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
     Adafruit_LvGL_Glue *glue    = (Adafruit_LvGL_Glue *)disp->user_data;
     Adafruit_SPITFT    *display = glue->display;
 
-    // NOTE TO FUTURE SELF: non-blocking DMA writes might be a bad idea,
-    // since LittlevGL isn't aware writes are in the background and may
-    // go modifying a buffer in-transit (most GFX DMA programs are aware
-    // of this and double-buffer any screen graphics). SO, this is all
-    // commented out for now...might revisit later, maybe LittlevGL can
-    // be tweaked to alternate buffers.
-
-    // A-HA NOTE TO FUTURE SELF: LittlevGL already supports this! Third
-    // argument to lv_disp_buf_init is a second pixel buffer (currently
-    // passing NULL -- change this if using a second buf w DMA).
-    // SAMD, ESP32 and nRF52 all have some DMA capacity in SPITFT.
-
-//    if(!glue->first_frame) {
-//      display->dmaWait();  // Wait for prior DMA transfer to complete
-//      display->endWrite(); // End transaction from any prior call
-//    } else {
-//        glue->first_frame = false;
-//    }
+    if(!glue->first_frame) {
+      display->dmaWait();  // Wait for prior DMA transfer to complete
+      display->endWrite(); // End transaction from any prior call
+    } else {
+        glue->first_frame = false;
+    }
 
     uint16_t width  = (area->x2 - area->x1 + 1);
     uint16_t height = (area->y2 - area->y1 + 1);
     display->startWrite();
     display->setAddrWindow(area->x1, area->y1, width, height);
-//    display->writePixels((uint16_t *)color_p, width * height, false,
-//      !LV_COLOR_16_SWAP);
-    // Use blocking write for now, for reasons noted above:
-  #if defined(ADAFRUIT_PYPORTAL)
-    display->writePixels((uint16_t *)color_p, width * height, true,
+#if defined(ADAFRUIT_PYPORTAL) || defined(NRF52_SERIES)
+    display->writePixels((uint16_t *)color_p, width * height, false,
       LV_COLOR_16_SWAP);
-  #else
-    // MESSY, still have some endian stuff to sort out here
-    #if defined(NRF52_SERIES)
-      display->writePixels((uint16_t *)color_p, width * height, true,
-        LV_COLOR_16_SWAP);
-    #else
-      display->writePixels((uint16_t *)color_p, width * height, true,
-        !LV_COLOR_16_SWAP);
-    #endif
-  #endif
-    display->endWrite();
-//    // If SPI touch is used, must endWrite screen now to finish transaction
-//    if(glue->touchscreen && !glue->is_adc_touch) {
-//        display->endWrite();
-//    }
+#else
+    display->writePixels((uint16_t *)color_p, width * height, false,
+      !LV_COLOR_16_SWAP);
+#endif
+
     lv_disp_flush_ready(disp);
 }
 
@@ -295,12 +276,16 @@ LvGLStatus Adafruit_LvGL_Glue::begin(
     }
 #endif
 
-    // Allocate LvGL display buffer
+    // Allocate LvGL display buffer (x2 because DMA double buffering)
     LvGLStatus status = LVGL_ERR_ALLOC;
-    if((lv_pixel_buf = new lv_color_t[LV_HOR_RES_MAX * LV_BUFFER_ROWS])) {
+    if((lv_pixel_buf = new lv_color_t[LV_HOR_RES_MAX * LV_BUFFER_ROWS * 2])) {
 
-        // Initialize LvGL display buffer
-        lv_disp_buf_init(&lv_disp_buf, lv_pixel_buf, NULL,
+        display     = tft;
+        touchscreen = (void *)touch;
+
+        // Initialize LvGL display buffers
+        lv_disp_buf_init(&lv_disp_buf, lv_pixel_buf,      // 1st half buf
+          &lv_pixel_buf[LV_HOR_RES_MAX * LV_BUFFER_ROWS], // 2nd half buf
           LV_HOR_RES_MAX * LV_BUFFER_ROWS);
 
         // Initialize LvGL display driver
@@ -320,9 +305,6 @@ LvGLStatus Adafruit_LvGL_Glue::begin(
             lv_indev_drv.user_data = (lv_indev_drv_user_data_t)this;
             lv_input_dev_ptr       = lv_indev_drv_register(&lv_indev_drv);
         }
-
-        display     = tft;   // Init these before setting up timer
-        touchscreen = (void *)touch;
 
         // TIMER SETUP is architecture-specific ----------------------------
 
