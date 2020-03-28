@@ -148,7 +148,7 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
             // the FIFO size correctly, causing false release events. If it
             // looks like we've read the last point from the FIFO, pause
             // briefly to allow any more FIFO events to pile up. This
-            // doesn't seem to be necessary on SAMD or ESP32.
+            // doesn't seem to be necessary on SAMD or ESP32. ???
             if(!moar) {
                 delay(50);
             }
@@ -169,7 +169,7 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
 #if LV_COLOR_DEPTH != 16
   #pragma error("LV_COLOR_DEPTH must be 16")
 #endif
-// This might no longer be true, since using blocking writes, so disabled:
+// This isn't necessarily true, don't mention it for now. See notes later.
 //#if LV_COLOR_16_SWAP != 0
 //  #pragma message("Set LV_COLOR_16_SWAP to 0 for best display performance")
 //#endif
@@ -201,6 +201,7 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
     uint16_t height = (area->y2 - area->y1 + 1);
     display->startWrite();
     display->setAddrWindow(area->x1, area->y1, width, height);
+    // Not sure yet why endian handling isn't consistent...work on this...
 #if defined(ADAFRUIT_PYPORTAL) || defined(NRF52_SERIES)
     display->writePixels((uint16_t *)color_p, width * height, false,
       LV_COLOR_16_SWAP);
