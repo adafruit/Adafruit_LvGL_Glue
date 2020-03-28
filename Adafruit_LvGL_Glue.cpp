@@ -291,8 +291,16 @@ LvGLStatus Adafruit_LvGL_Glue::begin(
 
         // Initialize LvGL display driver
         lv_disp_drv_init(&lv_disp_drv);
+#if defined(ARDUINO_NRF52840_CLUE) || defined(ARDUINO_NRF52840_CIRCUITPLAY) || defined(ARDUINO_SAMD_CIRCUITPLAYGROUND_EXPRESS)
+        // ST7789 library (used by CLUE and TFT Gizmo for Circuit Playground
+        // Express/Bluefruit) is sort of low-level rigged to a 240x320
+        // screen, so this needs to work around that manually...
+        lv_disp_drv.hor_res   = 240;
+        lv_disp_drv.ver_res   = 240;
+#else
         lv_disp_drv.hor_res   = tft->width();
         lv_disp_drv.ver_res   = tft->height();
+#endif
         lv_disp_drv.flush_cb  = lv_flush_callback;
         lv_disp_drv.buffer    = &lv_disp_buf;
         lv_disp_drv.user_data = (lv_disp_drv_user_data_t)this;
