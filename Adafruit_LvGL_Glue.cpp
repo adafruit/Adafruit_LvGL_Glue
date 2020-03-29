@@ -202,7 +202,7 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
     display->startWrite();
     display->setAddrWindow(area->x1, area->y1, width, height);
     // Not sure yet why endian handling isn't consistent...work on this...
-#if defined(ADAFRUIT_PYPORTAL) || defined(NRF52_SERIES)
+#if defined(ADAFRUIT_PYPORTAL) || defined(ADAFRUIT_PYPORTAL_M4_TITANO) || defined(NRF52_SERIES)
     display->writePixels((uint16_t *)color_p, width * height, false,
       LV_COLOR_16_SWAP);
 #else
@@ -216,9 +216,13 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
 #if(LV_USE_LOG)
 // Optional LittlevGL debug print function, writes to Serial if debug is
 // enabled when calling glue begin() function.
-static lv_log_print_g_cb_t lv_debug(lv_log_level_t level, const char *file,
+static void lv_debug(lv_log_level_t level, const char *file,
   uint32_t line, const char *dsc) {
-    Serial.printf("%s@%d->%s\r\n", file, line, dsc);
+    Serial.print(file);
+    Serial.write('@');
+    Serial.print(line);
+    Serial.write("->");
+    Serial.println(dsc);
 }
 #endif
 
