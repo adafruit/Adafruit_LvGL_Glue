@@ -3,13 +3,14 @@
 // Adafruit_ILI9341 (PyPortal, PyPortal Pynt) or Adafruit_HX8357 (PyPortal
 // Titano) libraries. This example doesn't use any touchscreen input, but
 // it's declared anyway so this sketch can be copied-and-pasted to serve
-// as a starting point for other projects.
+// as a starting point for other projects. If display is scrambled, check
+// that the correct board is selected -- PyPortal vs PyPortal Titano.
 
 #include <lvgl.h>
 #include <TouchScreen.h>
 #include <Adafruit_LvGL_Glue.h>
 
-#define ROTATION       3 // PyPortal landscape orientation
+#define TFT_ROTATION   3 // Landscape orientation on PyPortal
 #define TFT_D0        34 // PyPortal TFT pins
 #define TFT_WR        26
 #define TFT_DC        10
@@ -39,7 +40,7 @@ void setup(void) {
 
   // Initialize display BEFORE glue setup
   tft.begin();
-  tft.setRotation(ROTATION);
+  tft.setRotation(TFT_ROTATION);
   pinMode(TFT_BACKLIGHT, OUTPUT);
   digitalWrite(TFT_BACKLIGHT, HIGH);
 
