@@ -35,6 +35,16 @@
 TouchScreen        ts(XP, YP, XM, YM, 300);
 Adafruit_LvGL_Glue glue;
 
+// This example sketch's LittlevGL UI-building calls are all in this
+// function rather than in setup(), so simple programs can just 
+// copy-and-paste this sketch as a starting point, then embellish here:
+void lvgl_setup(void) {
+  // Create simple label centered on screen
+  lv_obj_t *label = lv_label_create(lv_scr_act(), NULL);
+  lv_label_set_text(label, "Hello Arduino!");
+  lv_obj_align(label, NULL, LV_ALIGN_CENTER, 0, 0);
+}
+
 void setup(void) {
   Serial.begin(115200);
 
@@ -53,12 +63,7 @@ void setup(void) {
     for(;;);
   }
 
-  // LittlevGL UI setup proceeds from here ---------------------------------
-
-  // Create simple label centered on screen
-  lv_obj_t *label = lv_label_create(lv_scr_act(), NULL);
-  lv_label_set_text(label, "Hello Arduino!");
-  lv_obj_align(label, NULL, LV_ALIGN_CENTER, 0, 0);
+  lvgl_setup(); // Call UI-building function above
 }
 
 void loop(void) {

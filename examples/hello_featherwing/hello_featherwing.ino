@@ -3,8 +3,8 @@
 // and Adafruit_ILI9341 (2.4" TFT) or Adafruit_HX8357 (3.5") libraries.
 // This example doesn't use any touchscreen input, but it's declared anyway
 // so this sketch can be copied-and-pasted to serve as a starting point for
-// other projects. If display is scrambled, check that the correct
-// FeatherWing type is selected.
+// other projects. If display is scrambled, check that correct FeatherWing
+// type is selected below (set BIG_FEATHERWING to 0 or 1 as needed).
 
 #define BIG_FEATHERWING 0 // Set this to 1 for 3.5" (480x320) FeatherWing!
 
@@ -35,6 +35,16 @@
 Adafruit_STMPE610  ts(STMPE_CS);
 Adafruit_LvGL_Glue glue;
 
+// This example sketch's LittlevGL UI-building calls are all in this
+// function rather than in setup(), so simple programs can just 
+// copy-and-paste this sketch as a starting point, then embellish here:
+void lvgl_setup(void) {
+  // Create simple label centered on screen
+  lv_obj_t *label = lv_label_create(lv_scr_act(), NULL);
+  lv_label_set_text(label, "Hello Arduino!");
+  lv_obj_align(label, NULL, LV_ALIGN_CENTER, 0, 0);
+}
+
 void setup(void) {
   Serial.begin(115200);
 
@@ -53,12 +63,7 @@ void setup(void) {
     for(;;);
   }
 
-  // LittlevGL UI setup proceeds from here ---------------------------------
-
-  // Create simple label centered on screen
-  lv_obj_t *label = lv_label_create(lv_scr_act(), NULL);
-  lv_label_set_text(label, "Hello Arduino!");
-  lv_obj_align(label, NULL, LV_ALIGN_CENTER, 0, 0);
+  lvgl_setup(); // Call UI-building function above
 }
 
 void loop(void) {
