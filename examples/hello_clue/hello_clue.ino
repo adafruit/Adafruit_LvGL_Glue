@@ -49,3 +49,8 @@ void loop(void) {
   lv_task_handler(); // Call LittleVGL task handler periodically
   delay(5);
 }
+
+// NOTE TO FUTURE SELF: this sketch is essentially the same as the Gizmo
+// widgets example. If updating one sketch, make sure the other is kept
+// in sync. Aside from screen setup, differences include backlight control
+// and A/B button setup & read (CPX is active high, CLUE is active low).
