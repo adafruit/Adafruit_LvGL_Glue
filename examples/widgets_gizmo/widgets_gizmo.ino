@@ -4,8 +4,8 @@
 // pretend like it's a status display for something -- the left and right
 // buttons (on the back if looking at the screen) switch between three
 // different tabs, each displaying different information. The code's a bit
-// more complex than the hello_clue example, so best get that working before
-// trying this.
+// more complex than the hello_gizmo example, so best get that working
+// before trying this.
 
 #include <lvgl.h>
 #include <Adafruit_ST7789.h>
