@@ -1,44 +1,49 @@
-// A more interesting example for LittlevGL on Adafruit PyPortal, showing
-// use of the touchscreen. Code's a little more complex than the
-// hello_pyportal example, so best get that working before trying this.
-// By default, as written, on regular (320x240) PyPortal the example is a
-// pretend calculator keypad, while PyPortal Titano (480x320) has a whole
-// keyboard (though you'll probably need a stylus). These just seemed the
-// right level of detail for their respective screens, but feel free to
-// override and try either for yourself.
+// A Pmore interesting example for LittlevGL on Adafruit TFT FeatherWings,
+// showing use of the touchscreen. Code's a little more complex than the
+// hello_featherwing example, so best get that working before trying this.
+// By default, as written, on a 320x240 TFT FeatherWing the example is a
+// pretend calculator keypad, while 480x320 TFT has a whole keyboard
+// (though you'll probably need a stylus). These just seemed the right
+// level of detail for their respective screens, but feel free to override
+// and try either for yourself. If display is scrambled, check that
+// correct FeatherWing type is selected below (set BIG_FEATHERWING to 0
+// or 1 as needed).
+
+#define BIG_FEATHERWING 0 // Set this to 1 for 3.5" (480x320) FeatherWing!
 
 #include <lvgl.h>
-#include <TouchScreen.h>
 #include <Adafruit_LvGL_Glue.h>
+#include <Adafruit_STMPE610.h>
 
 #define DEMO_CALC 0
 #define DEMO_TEXT 1
 
-#define TFT_D0        34 // PyPortal TFT pins
-#define TFT_WR        26
-#define TFT_DC        10
-#define TFT_CS        11
-#define TFT_RST       24
-#define TFT_RD         9
-#define TFT_BACKLIGHT 25
-#define YP            A4 // PyPortal touchscreen pins
-#define XP            A5
-#define YM            A6
-#define XM            A7
+#ifdef ESP32
+   #define TFT_CS   15
+   #define TFT_DC   33
+   #define STMPE_CS 32
+#else
+   #define TFT_CS    9
+   #define TFT_DC   10
+   #define STMPE_CS  6
+#endif
+#define TFT_RST     -1
 
-#if defined(ADAFRUIT_PYPORTAL_M4_TITANO)
+#if BIG_FEATHERWING
   #include <Adafruit_HX8357.h>
-  Adafruit_HX8357  tft(tft8bitbus, TFT_D0, TFT_WR, TFT_DC, TFT_CS, TFT_RST,
-    TFT_RD);
-  #define DEMO DEMO_TEXT // On Titano, do text/keyboard example
+  Adafruit_HX8357  tft(TFT_CS, TFT_DC, TFT_RST);
+  #define DEMO DEMO_TEXT // On big TFT, do text/keyboard example
 #else
   #include <Adafruit_ILI9341.h>
-  Adafruit_ILI9341 tft(tft8bitbus, TFT_D0, TFT_WR, TFT_DC, TFT_CS, TFT_RST,
-    TFT_RD);
-  #define DEMO DEMO_CALC // Smaller PyPortal, do keypad example
+  Adafruit_ILI9341 tft(TFT_CS, TFT_DC);
+  #define DEMO DEMO_CALC // Smaller TFT, do keypad example
 #endif
-TouchScreen        ts(XP, YP, XM, YM, 300);
+
+Adafruit_STMPE610  ts(STMPE_CS);
 Adafruit_LvGL_Glue glue;
+
+#undef DEMO
+#define DEMO DEMO_TEXT
 
 #if DEMO == DEMO_CALC
 
@@ -47,10 +52,10 @@ Adafruit_LvGL_Glue glue;
 // This sketch is meant only to be illustrative and not functional, just
 // showing LittlevGL + Adafruit display/touch tied together with a modest
 // amount of code. Even a simple but working calc would require WAY more
-// code, distracting from that core idea (and is a waste of PyPortal).
+// code, distracting from that core idea (and is a waste of hardware).
 // Daiso has better calculators for $1.50.
 
-#define TFT_ROTATION 0 // Portrait orientation on PyPortal (USB top)
+#define TFT_ROTATION 0 // Portrait orientation
 
 lv_obj_t   *digits_label = NULL; // LittlevGL label object showing digits
 String      digits     = "0";    // Current digits string value
@@ -135,11 +140,11 @@ void lvgl_setup(void) {
 #else // Keyboard demo
 
 // Keyboard example, lets you enter and edit text in a field. Even on a
-// PyPortal Titano it requires a stylus to be even half useful (fingertip
+// 480x320 TFT it requires a stylus to be even half useful (fingertip
 // is possible if very patient), but having the option of a keyboard at
 // all on this device is pretty nifty!
 
-#define TFT_ROTATION 3 // Landscape orientation on PyPortal (USB right)
+#define TFT_ROTATION 1 // Landscape orientation
 
 lv_obj_t  *textarea,
           *keyboard = NULL; // Created/deleted as needed
@@ -261,13 +266,13 @@ void lvgl_setup(void) {
 void setup(void) {
   Serial.begin(115200);
 
-  // Initialize display BEFORE glue setup
+  // Initialize display and touchscreen BEFORE glue setup
   tft.begin();
   tft.setRotation(TFT_ROTATION);
-  pinMode(TFT_BACKLIGHT, OUTPUT);
-  digitalWrite(TFT_BACKLIGHT, HIGH);
-
-  // PyPortal touchscreen needs no init
+  if(!ts.begin()) {
+    Serial.println("Couldn't start touchscreen controller");
+    for(;;);
+  }
 
   // Initialize glue, passing in address of display & touchscreen
   LvGLStatus status = glue.begin(&tft, &ts);
@@ -284,6 +289,6 @@ void loop(void) {
   delay(5);
 }
 
-// NOTE TO FUTURE SELF: this sketch is largely similar to the FeatherWing
+// NOTE TO FUTURE SELF: this sketch is largely similar to the PyPortal
 // widgets example. If updating/bugfixing one sketch, make sure the other
 // is kept in sync.

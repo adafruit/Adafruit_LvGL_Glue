@@ -124,6 +124,11 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
             data->state = LV_INDEV_STATE_PR; // Is PRESSED
             TS_Point p  = touch->getPoint();
             // Serial.printf("%d %d %d\r\n", p.x, p.y, p.z);
+            // On big TFT FeatherWing, raw X axis is flipped??
+            if((glue->display->width()  == 480) ||
+               (glue->display->height() == 480)) {
+                p.x = (TS_MINX + TS_MAXX) - p.x;
+            }
             switch(glue->display->getRotation()) {
               case 0:
                 last_x = map(p.x, TS_MAXX, TS_MINX, 0, disp->width()  - 1);
