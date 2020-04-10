@@ -33,8 +33,8 @@ public:
   LvGLStatus begin(Adafruit_SPITFT *tft, bool debug = false);
   // These items need to be public for some internal callbacks,
   // but should be avoided by user code please!
-  Adafruit_SPITFT *display; ///< The SPITFT display instance
-  void *touchscreen;        ///< The touchscreen object to use
+  Adafruit_SPITFT *display; ///< Pointer to the SPITFT display instance
+  void *touchscreen;        ///< Pointer to the touchscreen object to use
   bool is_adc_touch; ///< determines if the touchscreen controlelr is ADC based
   bool first_frame;  ///< Tracks if a call to `lv_flush_callback` needs to wait
                      ///< for DMA transfer to complete
