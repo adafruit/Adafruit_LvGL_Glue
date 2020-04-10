@@ -16,7 +16,11 @@ typedef enum {
   LVGL_ERR_ALLOC,
   LVGL_ERR_TIMER,
 } LvGLStatus;
-
+/**
+ * @brief Class to act as a "glue" layer between the LvGL graphics library and
+ * most of Adafruit's TFT displays
+ *
+ */
 class Adafruit_LvGL_Glue {
 public:
   Adafruit_LvGL_Glue(void);
@@ -29,10 +33,11 @@ public:
   LvGLStatus begin(Adafruit_SPITFT *tft, bool debug = false);
   // These items need to be public for some internal callbacks,
   // but should be avoided by user code please!
-  Adafruit_SPITFT *display;
-  void *touchscreen;
-  bool is_adc_touch;
-  bool first_frame;
+  Adafruit_SPITFT *display; ///< The SPITFT display instance
+  void *touchscreen;        ///< The touchscreen object to use
+  bool is_adc_touch; ///< determines if the touchscreen controlelr is ADC based
+  bool first_frame;  ///< Tracks if a call to `lv_flush_callback` needs to wait
+                     ///< for DMA transfer to complete
 
 private:
   LvGLStatus begin(Adafruit_SPITFT *tft, void *touch, bool debug);

@@ -225,7 +225,12 @@ static void lv_debug(lv_log_level_t level, const char *file, uint32_t line,
 
 // GLUE LIB FUNCTIONS ------------------------------------------------------
 
-// Constructor, just initializes minimal variables.
+// Constructor
+/**
+ * @brief Construct a new Adafruit_LvGL_Glue::Adafruit_LvGL_Glue object,
+ * initializing minimal variables
+ *
+ */
 Adafruit_LvGL_Glue::Adafruit_LvGL_Glue(void)
     : lv_pixel_buf(NULL), first_frame(true) {
 #if defined(ARDUINO_ARCH_SAMD)
@@ -233,7 +238,12 @@ Adafruit_LvGL_Glue::Adafruit_LvGL_Glue(void)
 #endif
 }
 
-// Destructor, frees any stuff previously allocated within this library.
+// Destructor
+/**
+ * @brief Destroy the Adafruit_LvGL_Glue::Adafruit_LvGL_Glue object, freeing any
+ * memory previously allocated within this library.
+ *
+ */
 Adafruit_LvGL_Glue::~Adafruit_LvGL_Glue(void) {
   delete[] lv_pixel_buf;
 #if defined(ARDUINO_ARCH_SAMD)
@@ -243,25 +253,64 @@ Adafruit_LvGL_Glue::~Adafruit_LvGL_Glue(void) {
 }
 
 // begin() function is overloaded for STMPE610 touch, ADC touch, or none.
+
 // Pass in POINTERS to ALREADY INITIALIZED display & touch objects (user code
 // should have previously called corresponding begin() functions and checked
-// return states before invoking this), they are NOT initialized here. Debug
-// arg is only used if LV_USE_LOG is configured in LittleLVGL's lv_conf.h.
+// return states before invoking this),
+// they are NOT initialized here. Debug arg is
 // touch arg can be NULL (or left off) if using LittlevGL as a passive widget
 // display.
 
+/**
+ * @brief Configure the glue layer and the underlying LvGL code to use the given
+ * TFT display driver instance and touchscreen controller
+ *
+ * @param tft Pointer to an **already initialized** display object instance
+ * @param touch Pointer to an **already initialized** `Adafruit_STMPE610`
+ * touchscreen controller object instance
+ * @param debug Debug flag to enable debug messages. Only used if LV_USE_LOG is
+ * configured in LittleLVGL's lv_conf.h
+ * @return LvGLStatus The status of the initialization:
+ * * LVGL_OK : Success
+ * * LVGL_ERR_TIMER : Failure to set up timers
+ * * LVGL_ERR_ALLOC : Failure to allocate memory
+ */
 LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft,
                                      Adafruit_STMPE610 *touch, bool debug) {
   is_adc_touch = false;
   return begin(tft, (void *)touch, debug);
 }
-
+/**
+ * @brief Configure the glue layer and the underlying LvGL code to use the given
+ * TFT display driver and touchscreen controller instances
+ *
+ * @param tft Pointer to an **already initialized** display object instance
+ * @param touch Pointer to an **already initialized** `TouchScreen` touchscreen
+ * controller object instance
+ * @param debug Debug flag to enable debug messages. Only used if LV_USE_LOG is
+ * configured in LittleLVGL's lv_conf.h
+ * @return LvGLStatus The status of the initialization:
+ * * LVGL_OK : Success
+ * * LVGL_ERR_TIMER : Failure to set up timers
+ * * LVGL_ERR_ALLOC : Failure to allocate memory
+ */
 LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, TouchScreen *touch,
                                      bool debug) {
   is_adc_touch = true;
   return begin(tft, (void *)touch, debug);
 }
-
+/**
+ * @brief Configure the glue layer and the underlying LvGL code to use the given
+ * TFT display driver and touchscreen controller instances
+ *
+ * @param tft Pointer to an **already initialized** display object instance
+ * @param debug Debug flag to enable debug messages. Only used if LV_USE_LOG is
+ * configured in LittleLVGL's lv_conf.h
+ * @return LvGLStatus The status of the initialization:
+ * * LVGL_OK : Success
+ * * LVGL_ERR_TIMER : Failure to set up timers
+ * * LVGL_ERR_ALLOC : Failure to allocate memory
+ */
 LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, bool debug) {
   return begin(tft, (void *)NULL, debug);
 }
