@@ -213,9 +213,12 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
 #if (LV_USE_LOG)
 // Optional LittlevGL debug print function, writes to Serial if debug is
 // enabled when calling glue begin() function.
-static void lv_debug(lv_log_level_t level, const char *file, uint32_t line,
-                     const char *dsc) {
+static void lv_debug(lv_log_level_t level,
+    const char * file, uint32_t line, const char * fn_name, const char * dsc) {
+
   Serial.print(file);
+  Serial.write(':');
+  Serial.print(fn_name);
   Serial.write('@');
   Serial.print(line);
   Serial.write("->");

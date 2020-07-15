@@ -64,7 +64,7 @@ const char *buttons[]  = {       // Button matrix labels
 // This function processes events from the button matrix
 void button_event_handler(lv_obj_t *obj, lv_event_t event) {
   if(event == LV_EVENT_VALUE_CHANGED) {
-    const char *txt = lv_btnm_get_active_btn_text(obj);
+    const char *txt = lv_btnmatrix_get_active_btn_text(obj);
     if(txt) { // NULL if pressed in frame area outside buttons
       if(txt[0] == '.') {
         // Decimal button pressed. Add decimal point to "digits" string
@@ -98,22 +98,23 @@ void button_event_handler(lv_obj_t *obj, lv_event_t event) {
 void lvgl_setup(void) {
   // Because they're referenced any time an object is drawn, styles need
   // to be permanent in scope; either declared globally (outside all
-  // functions), or static. The styles used on the container and label are
-  // never modified after they're used here, so let's use static on those...
-  static lv_style_t container_style, label_style;
-
-  // Initialize styles to the "plain" defaults
-  lv_style_copy(&container_style, &lv_style_plain);
-  lv_style_copy(&label_style, &lv_style_plain);
+  // functions), dynamically on the heap (e.g., malloc), or static.
+  // The styles used on the container and label are never modified after
+  // they're used here, so let's use static on those...
+  // base styles come from the theme definitions with the LV_THEME_* defines in
+  // "lv_conf.h"
+  static lv_style_t container_style, label_style, matrix_style, button_style;
 
   // The calculator digits are held inside a LvGL container object
   // as this gives us a little more control over positioning.
   lv_obj_t *container = lv_cont_create(lv_scr_act(), NULL);
   lv_cont_set_fit(container, LV_FIT_NONE); // Don't auto fit
   lv_obj_set_size(container, tft.width(), 50); // Full width x 50 px
-  container_style.body.main_color = lv_color_hex(0xC0C0C0); // Gray
-  container_style.body.grad_color = lv_color_hex(0x909090); // gradient
-  lv_cont_set_style(container, LV_CONT_STYLE_MAIN, &container_style);
+  lv_style_init(&container_style);
+  lv_style_set_bg_color(&container_style, LV_STATE_DEFAULT, lv_color_hex(0xC0C0C0));
+  lv_style_set_bg_grad_color(&container_style, LV_STATE_DEFAULT, lv_color_hex(0x909090));
+  lv_style_set_bg_grad_dir(&container_style, LV_STATE_DEFAULT, LV_GRAD_DIR_VER);
+  lv_obj_add_style(container, LV_CONT_PART_MAIN, &container_style);
 
   // Calculator digits are just a text label inside the container,
   // refreshed whenever the global "digits" string changes.
@@ -123,13 +124,19 @@ void lvgl_setup(void) {
   lv_label_set_long_mode(digits_label, LV_LABEL_LONG_CROP);
   lv_obj_set_size(digits_label, tft.width() - 40, 30);
   lv_label_set_align(digits_label, LV_LABEL_ALIGN_RIGHT);
+  lv_style_init(&label_style);
+  lv_obj_add_style(digits_label, LV_LABEL_PART_MAIN, &label_style);
 
   // Fill the remaining space with the button matrix.
-  lv_obj_t *button_matrix = lv_btnm_create(lv_scr_act(), NULL);
-  lv_btnm_set_map(button_matrix, buttons);
+  lv_obj_t *button_matrix = lv_btnmatrix_create(lv_scr_act(), NULL);
+  lv_btnmatrix_set_map(button_matrix, buttons);
   lv_obj_align(button_matrix, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 50);
   lv_obj_set_size(button_matrix, tft.width(), tft.height() - 50);
   lv_obj_set_event_cb(button_matrix, button_event_handler);
+  lv_style_init(&matrix_style);
+  lv_obj_add_style(button_matrix, LV_BTNMATRIX_PART_BG, &matrix_style);
+  lv_style_init(&button_style);
+  lv_obj_add_style(button_matrix, LV_BTNMATRIX_PART_BTN, &button_style);
 }
 
 #else // Keyboard demo
@@ -159,7 +166,7 @@ void delete_keyboard(lv_anim_t * a) {
 // Called when the close or ok button is pressed on the keyboard
 void keyboard_event_handler(lv_obj_t *obj, lv_event_t event) {
   lv_kb_def_event_cb(keyboard, event);
-  
+
   if(event == LV_EVENT_APPLY || event == LV_EVENT_CANCEL) {
 #if LV_USE_ANIMATION
     lv_anim_t a;
