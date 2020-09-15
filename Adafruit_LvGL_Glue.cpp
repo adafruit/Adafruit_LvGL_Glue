@@ -114,6 +114,7 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
     disp->dmaWait();
     disp->endWrite();
     if ((fifo = touch->bufferSize())) { // 1 or more points await
+      release_count = 0;
       data->state = LV_INDEV_STATE_PR;  // Is PRESSED
       TS_Point p = touch->getPoint();
       // Serial.printf("%d %d %d\r\n", p.x, p.y, p.z);
@@ -151,7 +152,12 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
       }
 #endif
     } else {                            // FIFO empty
-      data->state = LV_INDEV_STATE_REL; // Is RELEASED
+      release_count += (release_count < 255);
+      if (release_count >= 2) {
+        data->state = LV_INDEV_STATE_REL; // Is REALLY RELEASED
+      } else {
+        data->state = LV_INDEV_STATE_PR; // Is STILL PRESSED
+      }
     }
 
     data->point.x = last_x; // Last-pressed coordinates
