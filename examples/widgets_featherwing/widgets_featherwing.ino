@@ -1,4 +1,4 @@
-// A Pmore interesting example for LittlevGL on Adafruit TFT FeatherWings,
+// A more interesting example for LittlevGL on Adafruit TFT FeatherWings,
 // showing use of the touchscreen. Code's a little more complex than the
 // hello_featherwing example, so best get that working before trying this.
 // By default, as written, on a 320x240 TFT FeatherWing the example is a
