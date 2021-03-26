@@ -197,15 +197,7 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
   uint16_t height = (area->y2 - area->y1 + 1);
   display->startWrite();
   display->setAddrWindow(area->x1, area->y1, width, height);
-  // Not sure yet why endian handling isn't consistent...work on this...
-#if defined(ADAFRUIT_PYPORTAL) || defined(ADAFRUIT_PYPORTAL_M4_TITANO) ||      \
-    defined(NRF52_SERIES)
-  display->writePixels((uint16_t *)color_p, width * height, false,
-                       LV_COLOR_16_SWAP);
-#else
-  display->writePixels((uint16_t *)color_p, width * height, false,
-                       !LV_COLOR_16_SWAP);
-#endif
+  display->writePixels((uint16_t *)color_p, width * height, false, false);
 
   lv_disp_flush_ready(disp);
 }
