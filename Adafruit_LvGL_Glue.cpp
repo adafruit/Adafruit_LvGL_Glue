@@ -197,7 +197,8 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
   uint16_t height = (area->y2 - area->y1 + 1);
   display->startWrite();
   display->setAddrWindow(area->x1, area->y1, width, height);
-  display->writePixels((uint16_t *)color_p, width * height, false, false);
+  display->writePixels((uint16_t *)color_p, width * height, false,
+                       LV_COLOR_16_SWAP);
 
   lv_disp_flush_ready(disp);
 }

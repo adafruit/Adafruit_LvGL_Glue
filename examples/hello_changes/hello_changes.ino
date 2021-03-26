@@ -11,7 +11,8 @@ BUT...if you've used a prior version of Adafruit_LvGL_Glue, and had written
 Arduino sketches around it, you're unfortunately in for some extra work.
 The "glue" hasn't changed at all, but LittlevGL has seen repeated overhauls,
 and projects using earlier versions of Adafruit_LvGL_Glue will no longer
-compile in the new system without substantial changes.
+compile in the new system without substantial changes. Many function names,
+and styles in particular, will require updating.
 
 If desperate, you can downgrade to lv_arduino 2.1.5 and Adafruit_LvGL_Glue
 1.0.2, but this is NOT recommended when developing for the long haul --
@@ -52,7 +53,18 @@ Near the top of this file, change:
 to:
  #if 1 //Set it to "1" to enable content
 
-A little ways down, look for:
+About 30 lines down, change:
+ #define LV_COLOR_16_SWAP   0
+to:
+ #if defined(ADAFRUIT_PYPORTAL) || defined(ADAFRUIT_PYPORTAL_M4_TITANO) 
+  #define LV_COLOR_16_SWAP   1
+ #else
+  #define LV_COLOR_16_SWAP   0
+ #endif
+(This one change is not 100% necessary, but makes things a little faster
+on PyPortal screens.)
+
+A little ways further down, look for:
  #  define LV_MEM_SIZE    (32U * 1024U)
 and change to:
  #ifdef ARDUINO_SAMD_ZERO
