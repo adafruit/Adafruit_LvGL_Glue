@@ -16,6 +16,7 @@ typedef enum {
   LVGL_ERR_ALLOC,
   LVGL_ERR_TIMER,
 } LvGLStatus;
+
 /**
  * @brief Class to act as a "glue" layer between the LvGL graphics library and
  * most of Adafruit's TFT displays

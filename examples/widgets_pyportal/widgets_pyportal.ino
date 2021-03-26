@@ -35,7 +35,8 @@
   #include <Adafruit_ILI9341.h>
   Adafruit_ILI9341 tft(tft8bitbus, TFT_D0, TFT_WR, TFT_DC, TFT_CS, TFT_RST,
     TFT_RD);
-  #define DEMO DEMO_CALC // Smaller PyPortal, do keypad example
+//  #define DEMO DEMO_CALC // Smaller PyPortal, do keypad example
+  #define DEMO DEMO_TEXT // On Titano, do text/keyboard example
 #endif
 TouchScreen        ts(XP, YP, XM, YM, 300);
 Adafruit_LvGL_Glue glue;
@@ -64,7 +65,7 @@ const char *buttons[]  = {       // Button matrix labels
 // This function processes events from the button matrix
 void button_event_handler(lv_obj_t *obj, lv_event_t event) {
   if(event == LV_EVENT_VALUE_CHANGED) {
-    const char *txt = lv_btnm_get_active_btn_text(obj);
+    const char *txt = lv_btnmatrix_get_active_btn_text(obj);
     if(txt) { // NULL if pressed in frame area outside buttons
       if(txt[0] == '.') {
         // Decimal button pressed. Add decimal point to "digits" string
@@ -103,17 +104,18 @@ void lvgl_setup(void) {
   static lv_style_t container_style, label_style;
 
   // Initialize styles to the "plain" defaults
-  lv_style_copy(&container_style, &lv_style_plain);
-  lv_style_copy(&label_style, &lv_style_plain);
+// Wait - no - lv_style_init is a function
+//  lv_style_copy(&container_style, &lv_style_basic);
+//  lv_style_copy(&label_style, &lv_style_basic);
 
   // The calculator digits are held inside a LvGL container object
   // as this gives us a little more control over positioning.
   lv_obj_t *container = lv_cont_create(lv_scr_act(), NULL);
   lv_cont_set_fit(container, LV_FIT_NONE); // Don't auto fit
   lv_obj_set_size(container, tft.width(), 50); // Full width x 50 px
-  container_style.body.main_color = lv_color_hex(0xC0C0C0); // Gray
-  container_style.body.grad_color = lv_color_hex(0x909090); // gradient
-  lv_cont_set_style(container, LV_CONT_STYLE_MAIN, &container_style);
+//  container_style.body.main_color = lv_color_hex(0xC0C0C0); // Gray
+//  container_style.body.grad_color = lv_color_hex(0x909090); // gradient
+//  lv_cont_set_style(container, LV_CONT_STYLE_MAIN, &container_style);
 
   // Calculator digits are just a text label inside the container,
   // refreshed whenever the global "digits" string changes.
@@ -125,8 +127,8 @@ void lvgl_setup(void) {
   lv_label_set_align(digits_label, LV_LABEL_ALIGN_RIGHT);
 
   // Fill the remaining space with the button matrix.
-  lv_obj_t *button_matrix = lv_btnm_create(lv_scr_act(), NULL);
-  lv_btnm_set_map(button_matrix, buttons);
+  lv_obj_t *button_matrix = lv_btnmatrix_create(lv_scr_act(), NULL);
+  lv_btnmatrix_set_map(button_matrix, buttons);
   lv_obj_align(button_matrix, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 50);
   lv_obj_set_size(button_matrix, tft.width(), tft.height() - 50);
   lv_obj_set_event_cb(button_matrix, button_event_handler);
@@ -158,8 +160,8 @@ void delete_keyboard(lv_anim_t * a) {
 
 // Called when the close or ok button is pressed on the keyboard
 void keyboard_event_handler(lv_obj_t *obj, lv_event_t event) {
-  lv_kb_def_event_cb(keyboard, event);
-  
+//  lv_kb_def_event_cb(keyboard, event);
+
   if(event == LV_EVENT_APPLY || event == LV_EVENT_CANCEL) {
 #if LV_USE_ANIMATION
     lv_anim_t a;
@@ -167,14 +169,17 @@ void keyboard_event_handler(lv_obj_t *obj, lv_event_t event) {
     a.start = lv_obj_get_y(keyboard);
     a.end = LV_VER_RES;
     a.exec_cb = (lv_anim_exec_xcb_t)lv_obj_set_y;
-    a.path_cb = lv_anim_path_ease_in_out;
+    lv_anim_path_t path;
+    lv_anim_path_init(&path);
+    lv_anim_path_set_cb(&path, lv_anim_path_ease_in_out);
+//    a.path_cb = lv_anim_path_ease_in_out;
     a.ready_cb = delete_keyboard;
     a.act_time = 0;
     a.time = 300;
-    a.playback = 0;
-    a.playback_pause = 0;
-    a.repeat = 0;
-    a.repeat_pause = 0;
+//    a.playback = 0;
+//    a.playback_pause = 0;
+//    a.repeat = 0;
+//    a.repeat_pause = 0;
     lv_anim_create(&a);
 #else
     lv_obj_del(keyboard);
@@ -206,15 +211,16 @@ void text_area_event_handler(lv_obj_t *obj, lv_event_t event) {
       a.var = keyboard;
       a.start = LV_VER_RES;
       a.end = lv_obj_get_y(keyboard);
-      a.exec_cb = (lv_anim_exec_xcb_t)lv_obj_set_y;
+      lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t)lv_obj_set_y);
+//      a.exec_cb = (lv_anim_exec_xcb_t)lv_obj_set_y;
       a.path_cb = lv_anim_path_ease_in_out;
       a.ready_cb = NULL;
       a.act_time = 0;
       a.time = 300;
-      a.playback = 0;
-      a.playback_pause = 0;
-      a.repeat = 0;
-      a.repeat_pause = 0;
+//      a.playback = 0;
+//      a.playback_pause = 0;
+//      a.repeat = 0;
+//      a.repeat_pause = 0;
       lv_anim_create(&a);
 #endif
     }
