@@ -1,6 +1,8 @@
 // Minimal "Hello" example for LittlevGL on TFT Gizmo display for Adafruit
-// Circuit Playground Express and Circuit Playground Bluefruit. Requires
+// Circuit Playground Express or Circuit Playground Bluefruit. Requires
 // LittlevGL, Adafruit_LvGL_Glue, Adafruit_GFX and Adafruit_ST7735 libraries.
+
+// Prior Adafruit_LvGL_Glue users: see hello_changes example for updates!
 
 #include <lvgl.h>
 #include <Adafruit_ST7789.h>

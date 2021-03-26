@@ -6,6 +6,8 @@
 // as a starting point for other projects. If display is scrambled, check
 // that the correct board is selected -- PyPortal vs PyPortal Titano.
 
+// Prior Adafruit_LvGL_Glue users: see hello_changes example for updates!
+
 #include <lvgl.h>
 #include <TouchScreen.h>
 #include <Adafruit_LvGL_Glue.h>

@@ -7,6 +7,8 @@
 // more complex than the hello_gizmo example, so best get that working
 // before trying this.
 
+// Prior Adafruit_LvGL_Glue users: see hello_changes example for updates!
+
 #include <lvgl.h>
 #include <Adafruit_ST7789.h>
 #include <Adafruit_LvGL_Glue.h>

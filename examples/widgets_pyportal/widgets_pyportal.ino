@@ -7,6 +7,8 @@
 // right level of detail for their respective screens, but feel free to
 // override and try either for yourself.
 
+// Prior Adafruit_LvGL_Glue users: see hello_changes example for updates!
+
 #include <lvgl.h>
 #include <TouchScreen.h>
 #include <Adafruit_LvGL_Glue.h>

@@ -48,14 +48,23 @@ Yes, this header file lives OUTSIDE the lvgl library directory! That's just
 how it is, I don't make the rules.
 
 Near the top of this file, change:
-#if 0 //Set it to "1" to enable content
+ #if 0 //Set it to "1" to enable content
 to:
-#if 1 //Set it to "1" to enable content
+ #if 1 //Set it to "1" to enable content
+
+A little ways down, look for:
+ #  define LV_MEM_SIZE    (32U * 1024U)
+and change to:
+ #ifdef ARDUINO_SAMD_ZERO
+ #  define LV_MEM_SIZE    (4U * 1024U)
+ #else
+ #  define LV_MEM_SIZE    (32U * 1024U)
+ #endif
 
 Much further down, search for:
-#define LV_USE_USER_DATA        0
+ #define LV_USE_USER_DATA        0
 and change this to:
-#define LV_USE_USER_DATA        1
+ #define LV_USE_USER_DATA        1
 and that should get you started.
 
 BELOW IS A HYPOTHETICAL AND MINIMAL BUT ESSENTIALLY VALID ADAFRUIT_LVGL_GLUE
