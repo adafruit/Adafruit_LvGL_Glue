@@ -12,7 +12,8 @@ Arduino sketches around it, you're unfortunately in for some extra work.
 The "glue" hasn't changed at all, but LittlevGL has seen repeated overhauls,
 and projects using earlier versions of Adafruit_LvGL_Glue will no longer
 compile in the new system without substantial changes. Many function names,
-and styles in particular, will require updating.
+and styles in particular, will require updating. Some LittlevGL projects
+may be a bit too much to fit on M0 boards now.
 
 If desperate, you can downgrade to lv_arduino 2.1.5 and Adafruit_LvGL_Glue
 1.0.2, but this is NOT recommended when developing for the long haul --
@@ -56,7 +57,7 @@ to:
 About 30 lines down, change:
  #define LV_COLOR_16_SWAP   0
 to:
- #if defined(ADAFRUIT_PYPORTAL) || defined(ADAFRUIT_PYPORTAL_M4_TITANO) 
+ #if defined(ADAFRUIT_PYPORTAL)
   #define LV_COLOR_16_SWAP   1
  #else
   #define LV_COLOR_16_SWAP   0

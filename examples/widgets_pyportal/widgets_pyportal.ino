@@ -37,8 +37,7 @@
   #include <Adafruit_ILI9341.h>
   Adafruit_ILI9341 tft(tft8bitbus, TFT_D0, TFT_WR, TFT_DC, TFT_CS, TFT_RST,
     TFT_RD);
-//  #define DEMO DEMO_CALC // Smaller PyPortal, do keypad example
-  #define DEMO DEMO_TEXT // On Titano, do text/keyboard example
+  #define DEMO DEMO_CALC // Smaller PyPortal, do keypad example
 #endif
 TouchScreen        ts(XP, YP, XM, YM, 300);
 Adafruit_LvGL_Glue glue;
@@ -99,25 +98,16 @@ void button_event_handler(lv_obj_t *obj, lv_event_t event) {
 }
 
 void lvgl_setup(void) {
-  // Because they're referenced any time an object is drawn, styles need
-  // to be permanent in scope; either declared globally (outside all
-  // functions), or static. The styles used on the container and label are
-  // never modified after they're used here, so let's use static on those...
-  static lv_style_t container_style, label_style;
 
-  // Initialize styles to the "plain" defaults
-// Wait - no - lv_style_init is a function
-//  lv_style_copy(&container_style, &lv_style_basic);
-//  lv_style_copy(&label_style, &lv_style_basic);
+  // Just using the default styles for everything here, keeping
+  // it basic. See the official LittlevGL docs and examples for
+  // insights on applying styles.
 
   // The calculator digits are held inside a LvGL container object
   // as this gives us a little more control over positioning.
   lv_obj_t *container = lv_cont_create(lv_scr_act(), NULL);
   lv_cont_set_fit(container, LV_FIT_NONE); // Don't auto fit
   lv_obj_set_size(container, tft.width(), 50); // Full width x 50 px
-//  container_style.body.main_color = lv_color_hex(0xC0C0C0); // Gray
-//  container_style.body.grad_color = lv_color_hex(0x909090); // gradient
-//  lv_cont_set_style(container, LV_CONT_STYLE_MAIN, &container_style);
 
   // Calculator digits are just a text label inside the container,
   // refreshed whenever the global "digits" string changes.
@@ -148,10 +138,6 @@ void lvgl_setup(void) {
 lv_obj_t  *textarea,
           *keyboard = NULL; // Created/deleted as needed
 
-// Because they're referenced any time an object is drawn, styles need
-// to be permanent in scope.
-lv_style_t textarea_style, keyboard_style, pressed_style, released_style;
-
 #if LV_USE_ANIMATION
 // Called after keyboard slides closed - deletes keyboard object
 void delete_keyboard(lv_anim_t * a) {
@@ -162,27 +148,23 @@ void delete_keyboard(lv_anim_t * a) {
 
 // Called when the close or ok button is pressed on the keyboard
 void keyboard_event_handler(lv_obj_t *obj, lv_event_t event) {
-//  lv_kb_def_event_cb(keyboard, event);
+  lv_keyboard_def_event_cb(keyboard, event);
 
   if(event == LV_EVENT_APPLY || event == LV_EVENT_CANCEL) {
 #if LV_USE_ANIMATION
-    lv_anim_t a;
-    a.var = keyboard;
-    a.start = lv_obj_get_y(keyboard);
-    a.end = LV_VER_RES;
-    a.exec_cb = (lv_anim_exec_xcb_t)lv_obj_set_y;
+    // If animation is enabled, make keyboard slide away
     lv_anim_path_t path;
     lv_anim_path_init(&path);
     lv_anim_path_set_cb(&path, lv_anim_path_ease_in_out);
-//    a.path_cb = lv_anim_path_ease_in_out;
-    a.ready_cb = delete_keyboard;
-    a.act_time = 0;
-    a.time = 300;
-//    a.playback = 0;
-//    a.playback_pause = 0;
-//    a.repeat = 0;
-//    a.repeat_pause = 0;
-    lv_anim_create(&a);
+    lv_anim_t a;
+    lv_anim_init(&a);
+    lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t)lv_obj_set_y); 
+    lv_anim_set_var(&a, keyboard);
+    lv_anim_set_time(&a, 300);
+    lv_anim_set_values(&a, lv_obj_get_y(keyboard), LV_VER_RES); // start, end
+    lv_anim_set_path(&a, &path);
+    lv_anim_set_ready_cb(&a, delete_keyboard);
+    lv_anim_start(&a);
 #else
     lv_obj_del(keyboard);
     keyboard = NULL;
@@ -192,76 +174,52 @@ void keyboard_event_handler(lv_obj_t *obj, lv_event_t event) {
 
 // Other clicks in the text area
 void text_area_event_handler(lv_obj_t *obj, lv_event_t event) {
-  lv_obj_t *parent = lv_obj_get_parent(obj);
-
   if(event == LV_EVENT_CLICKED) {
+
+    // Unsure why, but text area has an initial clicked event on
+    // creation, causing the keyboard to appear. This is a hacky
+    // workaround that just ignores the first click event, so
+    // subsequent actual clicks bring up the keyboard.
+    static bool first = true;
+    if(first) {
+      first = false;
+      return;
+    }
+
     if(keyboard == NULL) {
       // If not present, create keyboard object at bottom of screen
-      keyboard = lv_kb_create(lv_scr_act(), NULL);
+      keyboard = lv_keyboard_create(lv_scr_act(), NULL);
       lv_obj_set_size(keyboard, tft.width(), tft.height() * 7 / 16);
       lv_obj_align(keyboard, textarea, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
-      lv_kb_set_ta(keyboard, textarea);
-      lv_kb_set_cursor_manage(keyboard, true);
-      lv_kb_set_style(keyboard, LV_KB_STYLE_BG, &keyboard_style);
-      lv_kb_set_style(keyboard, LV_KB_STYLE_BTN_PR, &pressed_style);
-      lv_kb_set_style(keyboard, LV_KB_STYLE_BTN_REL, &released_style);
+      lv_keyboard_set_textarea(keyboard, textarea);
+      lv_keyboard_set_cursor_manage(keyboard, true);
       lv_obj_set_event_cb(keyboard, keyboard_event_handler);
 
 #if LV_USE_ANIMATION
       // If animation is enabled, make keyboard slide into place
+      lv_anim_path_t path;
+      lv_anim_path_init(&path);
+      lv_anim_path_set_cb(&path, lv_anim_path_ease_in_out);
       lv_anim_t a;
-      a.var = keyboard;
-      a.start = LV_VER_RES;
-      a.end = lv_obj_get_y(keyboard);
-      lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t)lv_obj_set_y);
-//      a.exec_cb = (lv_anim_exec_xcb_t)lv_obj_set_y;
-      a.path_cb = lv_anim_path_ease_in_out;
-      a.ready_cb = NULL;
-      a.act_time = 0;
-      a.time = 300;
-//      a.playback = 0;
-//      a.playback_pause = 0;
-//      a.repeat = 0;
-//      a.repeat_pause = 0;
-      lv_anim_create(&a);
+      lv_anim_init(&a);
+      lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t)lv_obj_set_y); 
+      lv_anim_set_var(&a, keyboard);
+      lv_anim_set_time(&a, 300);
+      lv_anim_set_values(&a, LV_VER_RES, lv_obj_get_y(keyboard)); // start, end
+      lv_anim_set_path(&a, &path);
+      lv_anim_start(&a);
 #endif
     }
   }
 }
 
 void lvgl_setup(void) {
-  // Copy the "plain" style to our textarea style variable. No gradient,
-  // no rounded corners, etc. Can tweak things here if you want, that's
-  // why I'm not just assigning the plain style directly to the textarea.
-  lv_style_copy(&textarea_style, &lv_style_plain);
-
-  textarea = lv_ta_create(lv_scr_act(), NULL);
+  textarea = lv_textarea_create(lv_scr_act(), NULL);
   lv_obj_set_size(textarea, LV_HOR_RES, LV_VER_RES); // Whole screen
   lv_obj_align(textarea, NULL, LV_ALIGN_CENTER, 0, 0);
-  lv_ta_set_cursor_type(textarea, LV_CURSOR_BLOCK);
-  lv_ta_set_style(textarea, LV_TA_STYLE_BG, &textarea_style);
-  lv_ta_set_text(textarea, "This text is editable.");
+  lv_textarea_set_text(textarea, "This text is editable.");
   lv_obj_set_event_cb(textarea, text_area_event_handler);
-  lv_ta_set_cursor_pos(textarea, LV_TA_CURSOR_LAST);
-
-  lv_style_copy(&keyboard_style, &lv_style_plain);
-  keyboard_style.body.padding.left   = 2;
-  keyboard_style.body.padding.right  = 2;
-  keyboard_style.body.padding.top    = 2;
-  keyboard_style.body.padding.bottom = 2;
-  keyboard_style.body.padding.inner  = 0;
-
-  // Initialize key styles to the "button" defaults, override the
-  // radius and border settings so the keys pack better.
-  // The keyboard widget isn't actually created until needed.
-  // But the styles, being global and unchanging, only need to
-  // be set up once.
-  lv_style_copy(&pressed_style , &lv_style_btn_pr);
-  lv_style_copy(&released_style, &lv_style_btn_rel);
-  pressed_style.body.radius        = 0;
-  pressed_style.body.border.width  = 1;
-  released_style.body.radius       = 0;
-  released_style.body.border.width = 1;
+  lv_textarea_set_cursor_pos(textarea, LV_TEXTAREA_CURSOR_LAST);
 }
 
 #endif // end calculator / keyboard examples
