@@ -12,12 +12,15 @@ Arduino sketches around it, you're unfortunately in for some extra work.
 The "glue" hasn't changed at all, but LittlevGL has seen repeated overhauls,
 and projects using earlier versions of Adafruit_LvGL_Glue will no longer
 compile in the new system without substantial changes. Many function names,
-and styles in particular, will require updating. Some LittlevGL projects
-may be a bit too much to fit on M0 boards now.
+and styles in particular, will require updating. Many LittlevGL projects
+are too much to fit on M0 (SAMD21) boards now -- it's best to work with a
+device with more RAM -- M4 (SAMD51), nRF52 and ESP32 are currently
+supported.
 
-If desperate, you can downgrade to lv_arduino 2.1.5 and Adafruit_LvGL_Glue
-1.0.2, but this is NOT recommended when developing for the long haul --
-lv_arduino is altogether deprecated now and won't be staging a comeback.
+If desperate to get old code working, you can downgrade to lv_arduino 2.1.5
+and Adafruit_LvGL_Glue 1.0.2, but this is NOT recommended when developing
+for the long haul -- lv_arduino is altogether deprecated now and won't be
+staging a comeback.
 
 For starters, LittlevGL has moved to an entirely different Arduino library.
 "lv_arduino" should be UNINSTALLED, and in its place, "lvgl" should be
