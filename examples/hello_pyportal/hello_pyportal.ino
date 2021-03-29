@@ -8,9 +8,9 @@
 
 // Prior Adafruit_LvGL_Glue users: see hello_changes example for updates!
 
+#include <Adafruit_LvGL_Glue.h> // Always include this BEFORE lvgl.h!
 #include <lvgl.h>
 #include <TouchScreen.h>
-#include <Adafruit_LvGL_Glue.h>
 
 #define TFT_ROTATION   3 // Landscape orientation on PyPortal
 #define TFT_D0        34 // PyPortal TFT pins

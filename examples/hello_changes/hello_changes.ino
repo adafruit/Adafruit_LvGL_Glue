@@ -12,9 +12,9 @@ Arduino sketches around it, you're unfortunately in for some extra work.
 The "glue" hasn't changed at all, but LittlevGL has seen repeated overhauls,
 and projects using earlier versions of Adafruit_LvGL_Glue will no longer
 compile in the new system without substantial changes. Many function names,
-and styles in particular, will require updating. Many LittlevGL projects
-are too much to fit on M0 (SAMD21) boards now -- it's best to work with a
-device with more RAM -- M4 (SAMD51), nRF52 and ESP32 are currently
+constants, and styles in particular, will require updating. Many LittlevGL
+projects are too much to fit on M0 (SAMD21) boards now -- it's best to work
+with a device with more RAM -- M4 (SAMD51), nRF52 and ESP32 are currently
 supported.
 
 If desperate to get old code working, you can downgrade to lv_arduino 2.1.5
@@ -41,47 +41,11 @@ there compile in the Arduino IDE! But if you pick through these files
 manually, there's C code you can dissect for insights in creating interfaces
 with LittlevGL, and might create mash-ups with Adafruit_LvGL_Glue examples.
 
-Before using the lvgl and Adafruit_LvGL_Glue libraries, you MUST create a
-library configuration file, and this kind of breaks some Arduino rules...
-
-Copy the file:
-Documents/Arduino/libraries/lvgl/lv_conf_template.h
-to:
-Documents/Arduino/libraries/lv_conf.h
-
-Yes, this header file lives OUTSIDE the lvgl library directory! That's just
-how it is, I don't make the rules.
-
-Near the top of this file, change:
- #if 0 //Set it to "1" to enable content
-to:
- #if 1 //Set it to "1" to enable content
-
-About 30 lines down, change:
- #define LV_COLOR_16_SWAP   0
-to:
- #if defined(ADAFRUIT_PYPORTAL)
-  #define LV_COLOR_16_SWAP   1
- #else
-  #define LV_COLOR_16_SWAP   0
- #endif
-(This one change is not 100% necessary, but makes things a little faster
-on PyPortal screens.)
-
-A little ways further down, look for:
- #  define LV_MEM_SIZE    (32U * 1024U)
-and change to:
- #ifdef ARDUINO_SAMD_ZERO
- #  define LV_MEM_SIZE    (4U * 1024U)
- #else
- #  define LV_MEM_SIZE    (32U * 1024U)
- #endif
-
-Much further down, search for:
- #define LV_USE_USER_DATA        0
-and change this to:
- #define LV_USE_USER_DATA        1
-and that should get you started.
+Adafruit_LvGL_Glue includes a lv_conf.file (LittlevGL configuration) that
+should "just work" and enables some settings for best compatibility with
+Adafruit displays. The only "gotcha" here is that user sketches MUST
+#include Adafruit_LvGL_Glue.h BEFORE including lvgl.h, in order for
+LittlevGL to pick up on the location of this header file.
 
 BELOW IS A HYPOTHETICAL AND MINIMAL BUT ESSENTIALLY VALID ADAFRUIT_LVGL_GLUE
 ARDUINO SKETCH. Please see the other examples for more realistic use. Actual
@@ -89,9 +53,9 @@ projects will have different display interfacing, backlight control, a set
 of UI widgets and so forth.
 */
 
+#include <Adafruit_LvGL_Glue.h> // Glue library header INCLUDE THIS FIRST!
 #include <lvgl.h>               // LittlevGL header
 #include <Adafruit_ST7789.h>    // Display-specific header
-#include <Adafruit_LvGL_Glue.h> // Glue library header
 
 #define TFT_CS  1 // Display chip-select pin
 #define TFT_DC  2 // Display data/command pin

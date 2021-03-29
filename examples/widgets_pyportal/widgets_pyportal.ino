@@ -9,9 +9,9 @@
 
 // Prior Adafruit_LvGL_Glue users: see hello_changes example for updates!
 
+#include <Adafruit_LvGL_Glue.h> // Always include this BEFORE lvgl.h!
 #include <lvgl.h>
 #include <TouchScreen.h>
-#include <Adafruit_LvGL_Glue.h>
 
 #define DEMO_CALC 0
 #define DEMO_TEXT 1

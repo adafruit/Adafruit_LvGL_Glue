@@ -15,9 +15,9 @@
 #error "This example is for Circuit Playground Bluefruit only."
 #endif
 
+#include <Adafruit_LvGL_Glue.h> // Always include this BEFORE lvgl.h!
 #include <lvgl.h>
 #include <Adafruit_ST7789.h>
-#include <Adafruit_LvGL_Glue.h>
 
 #define TFT_ROTATION   2
 #define TFT_CS        A6

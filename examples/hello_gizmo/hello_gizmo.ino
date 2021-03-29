@@ -4,9 +4,9 @@
 
 // Prior Adafruit_LvGL_Glue users: see hello_changes example for updates!
 
+#include <Adafruit_LvGL_Glue.h> // Always include this BEFORE lvgl.h!
 #include <lvgl.h>
 #include <Adafruit_ST7789.h>
-#include <Adafruit_LvGL_Glue.h>
 
 #define TFT_ROTATION   2
 #define TFT_CS        A6

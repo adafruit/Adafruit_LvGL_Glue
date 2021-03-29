@@ -17,8 +17,8 @@
 
 #define BIG_FEATHERWING 0 // Set this to 1 for 3.5" (480x320) FeatherWing!
 
+#include <Adafruit_LvGL_Glue.h> // Always include this BEFORE lvgl.h!
 #include <lvgl.h>
-#include <Adafruit_LvGL_Glue.h>
 #include <Adafruit_STMPE610.h>
 
 #define DEMO_CALC 0
