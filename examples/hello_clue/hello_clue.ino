@@ -2,9 +2,11 @@
 // LittlevGL, Adafruit_LvGL_Glue, Adafruit_GFX and Adafruit_ST7735
 // libraries.
 
+// Prior Adafruit_LvGL_Glue users: see hello_changes example for updates!
+
+#include <Adafruit_LvGL_Glue.h> // Always include this BEFORE lvgl.h!
 #include <lvgl.h>
 #include <Adafruit_ST7789.h>
-#include <Adafruit_LvGL_Glue.h>
 
 #define TFT_ROTATION   1 // Landscape orientation on CLUE
 #define TFT_SPI     SPI1 // CLUE display peripheral & pins

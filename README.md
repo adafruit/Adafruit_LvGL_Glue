@@ -19,8 +19,18 @@ docs.littlevgl.com for a thorough explanation of capabilities and use.
  * [Adafruit Zero DMA Library](https://github.com/adafruit/Adafruit_ZeroDMA)
  * [Adafruit ZeroTimer Library](https://github.com/adafruit/Adafruit_ZeroTimer)
 
-# Contributing
+# Compatibility
+Version 2.0.0 is a breaking change, mostly due to significant structural
+changes in the LittlevGL library for Arduino. If you were previously using
+an earlier version of this library and/or LittlevGL, both will need updating,
+and you should skim the examples and read through the hello_changes example
+specifically.
 
+Use on M0 (SAMD21) boards isn't recommended anymore, as LittlevGL has grown.
+Simple programs might still work, but it's better to move up to a device
+with more RAM -- M4 (SAMD51), nRF52 and ESP32 are currently supported.
+
+# Contributing
 Contributions are welcome! Please read our [Code of Conduct](https://github.com/adafruit/Adafruit_LvGL_Glue/blob/master/CODE_OF_CONDUCT.md>)
 before contributing to help this project stay welcoming.
 

@@ -6,10 +6,12 @@
 // other projects. If display is scrambled, check that correct FeatherWing
 // type is selected below (set BIG_FEATHERWING to 0 or 1 as needed).
 
+// Prior Adafruit_LvGL_Glue users: see hello_changes example for updates!
+
 #define BIG_FEATHERWING 0 // Set this to 1 for 3.5" (480x320) FeatherWing!
 
+#include <Adafruit_LvGL_Glue.h> // Always include this BEFORE lvgl.h!
 #include <lvgl.h>
-#include <Adafruit_LvGL_Glue.h>
 #include <Adafruit_STMPE610.h>
 
 #ifdef ESP32
