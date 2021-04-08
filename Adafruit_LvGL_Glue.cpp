@@ -225,7 +225,7 @@ static void lv_debug(lv_log_level_t level, const char *file, uint32_t line,
  *
  */
 Adafruit_LvGL_Glue::Adafruit_LvGL_Glue(void)
-    : lv_pixel_buf(NULL), first_frame(true) {
+    : first_frame(true), lv_pixel_buf(NULL) {
 #if defined(ARDUINO_ARCH_SAMD)
   zerotimer = NULL;
 #endif
