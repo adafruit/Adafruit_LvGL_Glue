@@ -8,16 +8,16 @@ typedef File file_t;
 
 class Adafruit_LvGL_Glue_SD : public Adafruit_LvGL_Glue {
 public:
-  LvGLStatus begin(Adafruit_SPITFT *tft, Adafruit_STMPE610 *touch, SdFat *sdFat, 
+  LvGLStatus begin(Adafruit_SPITFT *tft, Adafruit_STMPE610 *touch, SdFat *sdFat,
                    bool debug = false);
 
-  LvGLStatus begin(Adafruit_SPITFT *tft, TouchScreen *touch, SdFat *sdFat, 
+  LvGLStatus begin(Adafruit_SPITFT *tft, TouchScreen *touch, SdFat *sdFat,
                    bool debug = false);
 
   LvGLStatus begin(Adafruit_SPITFT *tft, SdFat *sdFat, bool debug = false);
 
   // Needs to be public for internal callback
-  SdFat *sd;  ///< Pointer to SD card reader
+  SdFat *sd; ///< Pointer to SD card reader
 
 private:
   void initFileSystem();

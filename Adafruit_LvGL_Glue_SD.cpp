@@ -29,7 +29,7 @@ static lv_fs_res_t sd_open(struct _lv_fs_drv_t *drv, void *file_p,
   return LV_FS_RES_OK;
 }
 
-static lv_fs_res_t sd_read(struct _lv_fs_drv_t *drv, void *file_p, void *buf, 
+static lv_fs_res_t sd_read(struct _lv_fs_drv_t *drv, void *file_p, void *buf,
                            uint32_t btr, uint32_t *br) {
   file_t *fp = (file_t *)file_p;
 
@@ -97,8 +97,8 @@ LvGLStatus Adafruit_LvGL_Glue_SD::begin(Adafruit_SPITFT *tft,
  * * LVGL_ERR_TIMER : Failure to set up timers
  * * LVGL_ERR_ALLOC : Failure to allocate memory
  */
-LvGLStatus Adafruit_LvGL_Glue_SD::begin(Adafruit_SPITFT *tft, 
-                                        TouchScreen *touch, SdFat *sdFat, 
+LvGLStatus Adafruit_LvGL_Glue_SD::begin(Adafruit_SPITFT *tft,
+                                        TouchScreen *touch, SdFat *sdFat,
                                         bool debug) {
   sd = sdFat;
   LvGLStatus status = Adafruit_LvGL_Glue::begin(tft, touch, debug);
@@ -119,7 +119,7 @@ LvGLStatus Adafruit_LvGL_Glue_SD::begin(Adafruit_SPITFT *tft,
  * * LVGL_ERR_TIMER : Failure to set up timers
  * * LVGL_ERR_ALLOC : Failure to allocate memory
  */
-LvGLStatus Adafruit_LvGL_Glue_SD::begin(Adafruit_SPITFT *tft, SdFat *sdFat, 
+LvGLStatus Adafruit_LvGL_Glue_SD::begin(Adafruit_SPITFT *tft, SdFat *sdFat,
                                         bool debug) {
   sd = sdFat;
   LvGLStatus status = Adafruit_LvGL_Glue::begin(tft, debug);
