@@ -6,6 +6,11 @@
 
 typedef File file_t;
 
+/**
+ * @brief Class to act as a "glue" layer between the LvGL graphics library and
+ * most of Adafruit's TFT displays, with added support for reading from SD card.
+ *
+ */
 class Adafruit_LvGL_Glue_SD : public Adafruit_LvGL_Glue {
 public:
   LvGLStatus begin(Adafruit_SPITFT *tft, Adafruit_STMPE610 *touch, SdFat *sdFat,
