@@ -16,7 +16,7 @@ public:
 
   LvGLStatus begin(Adafruit_SPITFT *tft, SdFat *sdFat, bool debug = false);
 
-  // Needs to be public for internal callback
+  // The following need to be public for internal callbacks
   SdFat *sd; ///< Pointer to SD card reader
 
 private:
