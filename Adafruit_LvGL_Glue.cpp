@@ -320,7 +320,11 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
 
   // Allocate LvGL display buffer (x2 because DMA double buffering)
   LvGLStatus status = LVGL_ERR_ALLOC;
+#if defined(USE_SPI_DMA)
   if ((lv_pixel_buf = new lv_color_t[LV_HOR_RES_MAX * LV_BUFFER_ROWS * 2])) {
+#else
+  if ((lv_pixel_buf = new lv_color_t[LV_HOR_RES_MAX * LV_BUFFER_ROWS])) {
+#endif
 
     display = tft;
     touchscreen = (void *)touch;
@@ -328,7 +332,11 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
     // Initialize LvGL display buffers
     lv_disp_buf_init(
         &lv_disp_buf, lv_pixel_buf,                     // 1st half buf
+#if defined(USE_SPI_DMA)
         &lv_pixel_buf[LV_HOR_RES_MAX * LV_BUFFER_ROWS], // 2nd half buf
+#else
+        NULL, // No double-buffering
+#endif
         LV_HOR_RES_MAX * LV_BUFFER_ROWS);
 
     // Initialize LvGL display driver
