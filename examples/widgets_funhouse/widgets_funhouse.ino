@@ -11,7 +11,7 @@
 #include <lvgl.h>
 #include <Adafruit_ST7789.h>
 
-#define TFT_ROTATION   0 // Landscape orientation on CLUE
+#define TFT_ROTATION   0 // Landscape orientation on FunHouse
 
 Adafruit_ST7789    tft(TFT_CS, TFT_DC, TFT_RESET);
 Adafruit_LvGL_Glue glue;
@@ -26,7 +26,7 @@ lv_chart_series_t *series;         // 'Series' data for the bar chart
 
 // Canvas object is an image in memory. Although LittlevGL supports several
 // internal image formats, only the TRUE_COLOR variety allows drawing
-// operations. Fortunately nRF52840 has gobs of RAM for this. The canvas
+// operations. Fortunately ESP32-S2 has gobs of RAM for this. The canvas
 // buffer is global because it's referenced both in the setup and main loop.
 #define CANVAS_WIDTH  200 // Dimensions in pixels
 #define CANVAS_HEIGHT 150
