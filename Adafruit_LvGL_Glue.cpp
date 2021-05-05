@@ -329,15 +329,15 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
     display = tft;
     touchscreen = (void *)touch;
 
-    // Initialize LvGL display buffers
-    lv_disp_buf_init(
-        &lv_disp_buf, lv_pixel_buf,                     // 1st half buf
+    // Initialize LvGL display buffers. The "second half" buffer is only
+    // used if USE_SPI_DMA is enabled in Adafruit_GFX.
+    lv_disp_buf_init(&lv_disp_buf, lv_pixel_buf,
 #if defined(USE_SPI_DMA)
-        &lv_pixel_buf[LV_HOR_RES_MAX * LV_BUFFER_ROWS], // 2nd half buf
+                     &lv_pixel_buf[LV_HOR_RES_MAX * LV_BUFFER_ROWS],
 #else
-        NULL, // No double-buffering
+                     NULL, // No double-buffering
 #endif
-        LV_HOR_RES_MAX * LV_BUFFER_ROWS);
+                     LV_HOR_RES_MAX * LV_BUFFER_ROWS);
 
     // Initialize LvGL display driver
     lv_disp_drv_init(&lv_disp_drv);
@@ -423,24 +423,23 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
 
 #elif defined(NRF52_SERIES) // -----------------------------------------
 
-    TIMER_ID->TASKS_STOP = 1;               // Stop timer
-    TIMER_ID->MODE = TIMER_MODE_MODE_Timer; // Not counter mode
-    TIMER_ID->TASKS_CLEAR = 1;
-    TIMER_ID->BITMODE = TIMER_BITMODE_BITMODE_16Bit
-                        << TIMER_BITMODE_BITMODE_Pos;
-    TIMER_ID->PRESCALER = 0; // 1:1 prescale (16 MHz)
-    TIMER_ID->INTENSET = TIMER_INTENSET_COMPARE0_Enabled
-                         << TIMER_INTENSET_COMPARE0_Pos; // Event 0 int
-    TIMER_ID->CC[0] = TIMER_FREQ / (lv_tick_interval_ms * 1000);
+  TIMER_ID->TASKS_STOP = 1;               // Stop timer
+  TIMER_ID->MODE = TIMER_MODE_MODE_Timer; // Not counter mode
+  TIMER_ID->TASKS_CLEAR = 1;
+  TIMER_ID->BITMODE = TIMER_BITMODE_BITMODE_16Bit << TIMER_BITMODE_BITMODE_Pos;
+  TIMER_ID->PRESCALER = 0; // 1:1 prescale (16 MHz)
+  TIMER_ID->INTENSET = TIMER_INTENSET_COMPARE0_Enabled
+                       << TIMER_INTENSET_COMPARE0_Pos; // Event 0 int
+  TIMER_ID->CC[0] = TIMER_FREQ / (lv_tick_interval_ms * 1000);
 
-    NVIC_DisableIRQ(TIMER_IRQN);
-    NVIC_ClearPendingIRQ(TIMER_IRQN);
-    NVIC_SetPriority(TIMER_IRQN, 2); // Lower priority than soft device
-    NVIC_EnableIRQ(TIMER_IRQN);
+  NVIC_DisableIRQ(TIMER_IRQN);
+  NVIC_ClearPendingIRQ(TIMER_IRQN);
+  NVIC_SetPriority(TIMER_IRQN, 2); // Lower priority than soft device
+  NVIC_EnableIRQ(TIMER_IRQN);
 
-    TIMER_ID->TASKS_START = 1; // Start timer
+  TIMER_ID->TASKS_START = 1; // Start timer
 
-    status = LVGL_OK;
+  status = LVGL_OK;
 
 #endif // end timer setup --------------------------------------------------
   }
