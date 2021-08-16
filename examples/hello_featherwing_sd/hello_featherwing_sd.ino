@@ -10,10 +10,14 @@
 
 // Prior Adafruit_LvGL_Glue users: see hello_changes example for updates!
 
-// This example requires the 'cloudy.bin' image file to be placed in the root of the SD card.
-// Available in the examples folder (hello_featherwing_sd/images/cloudy.bin).
+// This example requires the 'cloudy.bin' image file to be placed in the
+// root directory of the SD card. Available in the examples folder
+// (hello_featherwing_sd/images/cloudy.bin). See official LittlevGL
+// documentation for help on converting images to .bin format.
 
-#define BIG_FEATHERWING 1 // Set this to 1 for 3.5" (480x320) FeatherWing!
+// Not recommended for SAMD21 (M0) boards -- best for SAMD51, ESP32, etc.
+
+#define BIG_FEATHERWING 0 // Set this to 1 for 3.5" (480x320) FeatherWing!
 
 // Always include this BEFORE lvgl.h
 // NOTE: this is Adafruit_LvGL_Glue_SD.h and not Adafruit_LvGL_Glue.h
@@ -29,22 +33,22 @@
 #define SD_CS    14
 #else
 #define TFT_CS    9
-   #define TFT_DC   10
-   #define STMPE_CS  6
-   #define SD_CS     5
+#define TFT_DC   10
+#define STMPE_CS  6
+#define SD_CS     5
 #endif
 #define TFT_ROTATION 1 // Landscape orientation on FeatherWing
 #define TFT_RST     -1
 
 #if BIG_FEATHERWING
 #include <Adafruit_HX8357.h>
-Adafruit_HX8357  tft(TFT_CS, TFT_DC, TFT_RST);
+Adafruit_HX8357 tft(TFT_CS, TFT_DC, TFT_RST);
 #else
 #include <Adafruit_ILI9341.h>
-  Adafruit_ILI9341 tft(TFT_CS, TFT_DC);
+Adafruit_ILI9341 tft(TFT_CS, TFT_DC);
 #endif
 
-Adafruit_STMPE610  ts(STMPE_CS);
+Adafruit_STMPE610 ts(STMPE_CS);
 
 // Use Adafruit_LvGL_Glue_SD instead of Adafruit_LvGL_Glue
 Adafruit_LvGL_Glue_SD glue;
@@ -55,7 +59,8 @@ SdFat sd;
 // copy-and-paste this sketch as a starting point, then embellish here:
 void lvgl_setup(void) {
   // Create an image from a file on the SD card
-  // Ensure the cloudy.bin file (available in this example folder) is manually copied to the SD card
+  // The cloudy.bin file (available in this example folder) should have
+  // been  manually copied to the SD card first.
   // LVGL Glue initializes the LVGL file system with drive letter 'S'
   lv_obj_t *img = lv_img_create(lv_scr_act(), NULL);
   lv_img_set_src(img, "S:cloudy.bin");
