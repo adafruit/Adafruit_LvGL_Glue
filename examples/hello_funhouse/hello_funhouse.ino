@@ -1,4 +1,4 @@
-// Minimal "Hello" example for LittlevGL on Adafruit CLUE. Requires
+// Minimal "Hello" example for LittlevGL on Adafruit Funhouse. Requires
 // LittlevGL, Adafruit_LvGL_Glue, Adafruit_GFX and Adafruit_ST7735
 // libraries.
 
@@ -7,8 +7,6 @@
 #include <Adafruit_LvGL_Glue.h> // Always include this BEFORE lvgl.h!
 #include <lvgl.h>
 #include <Adafruit_ST7789.h>
-
-#define TFT_ROTATION   2 // Landscape orientation on FUNHOUSE
 
 Adafruit_ST7789    tft(TFT_CS, TFT_DC, TFT_RESET);
 Adafruit_LvGL_Glue glue;
@@ -28,7 +26,6 @@ void setup(void) {
 
   // Initialize display BEFORE glue setup
   tft.init(240, 240);
-  tft.setRotation(TFT_ROTATION);
   pinMode(TFT_BACKLIGHT, OUTPUT);
   digitalWrite(TFT_BACKLIGHT, HIGH);
 
@@ -46,8 +43,3 @@ void loop(void) {
   lv_task_handler(); // Call LittleVGL task handler periodically
   delay(5);
 }
-
-// NOTE TO FUTURE SELF: this sketch is essentially the same as the Gizmo
-// widgets example. If updating one sketch, make sure the other is kept
-// in sync. Aside from screen setup, differences include backlight control
-// and A/B button setup & read (CPX is active high, CLUE is active low).

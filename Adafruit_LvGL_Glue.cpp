@@ -371,7 +371,7 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
 
     // status is still ERR_ALLOC until proven otherwise...
     if ((zerotimer = new Adafruit_ZeroTimer(TIMER_NUM))) {
-      uint8_t divider = 1;
+      uint16_t divider = 1;
       uint16_t compare = 0;
       tc_clock_prescaler prescaler = TC_CLOCK_PRESCALER_DIV1;
 

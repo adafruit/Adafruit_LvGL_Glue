@@ -21,7 +21,7 @@ static lv_fs_res_t sd_open(struct _lv_fs_drv_t *drv, void *file_p,
   SdFat *sd = glue->sd;
   file_t file = sd->open(path);
 
-  if (file == NULL) {
+  if (!file) {
     LV_LOG_ERROR("Failed to open file %s", path);
     return LV_FS_RES_UNKNOWN;
   }
