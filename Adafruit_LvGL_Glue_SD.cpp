@@ -8,14 +8,13 @@ static void waitForDisplay(Adafruit_SPITFT *display) {
 }
 
 // Callback functions to support reading images from SD cards
-static lv_fs_res_t sd_open(struct _lv_fs_drv_t *drv, void *file_p,
-                           const char *path, lv_fs_mode_t mode) {
+static void *sd_open(lv_fs_drv_t *drv, const char *path, lv_fs_mode_t mode) {
   Adafruit_LvGL_Glue_SD *glue = (Adafruit_LvGL_Glue_SD *)drv->user_data;
   waitForDisplay(glue->display);
 
   // Support only reading
   if (mode != LV_FS_MODE_RD) {
-    return LV_FS_RES_NOT_IMP;
+    return NULL;
   }
 
   SdFat *sd = glue->sd;
@@ -23,17 +22,16 @@ static lv_fs_res_t sd_open(struct _lv_fs_drv_t *drv, void *file_p,
 
   if (!file) {
     LV_LOG_ERROR("Failed to open file %s", path);
-    return LV_FS_RES_UNKNOWN;
+    return NULL;
   }
 
   if (!file.seek(0)) {
-    return LV_FS_RES_UNKNOWN;
+    return NULL;
   }
 
-  file_t *fp = (file_t *)file_p;
-  *fp = file;
+  file_t *fp = &file;
 
-  return LV_FS_RES_OK;
+  return fp;
 }
 
 static lv_fs_res_t sd_read(struct _lv_fs_drv_t *drv, void *file_p, void *buf,
@@ -55,7 +53,7 @@ static lv_fs_res_t sd_close(lv_fs_drv_t *drv, void *file_p) {
   return fp->close() ? LV_FS_RES_OK : LV_FS_RES_UNKNOWN;
 }
 
-static lv_fs_res_t sd_seek(lv_fs_drv_t *drv, void *file_p, uint32_t pos) {
+static lv_fs_res_t sd_seek(lv_fs_drv_t * drv, void * file_p, uint32_t pos, lv_fs_whence_t whence) {
   Adafruit_LvGL_Glue_SD *glue = (Adafruit_LvGL_Glue_SD *)drv->user_data;
   waitForDisplay(glue->display);
 
@@ -145,12 +143,11 @@ LvGLStatus Adafruit_LvGL_Glue_SD::begin(Adafruit_SPITFT *tft, SdFat *sdFat,
 void Adafruit_LvGL_Glue_SD::initFileSystem() {
   lv_fs_drv_init(&lv_fs_drv);
   lv_fs_drv.letter = 'S';
-  lv_fs_drv.file_size = sizeof(file_t);
   lv_fs_drv.open_cb = sd_open;
   lv_fs_drv.close_cb = sd_close;
   lv_fs_drv.read_cb = sd_read;
   lv_fs_drv.seek_cb = sd_seek;
   lv_fs_drv.tell_cb = sd_tell;
-  lv_fs_drv.user_data = (lv_fs_drv_user_data_t)this;
+  lv_fs_drv.user_data = this;
   lv_fs_drv_register(&lv_fs_drv);
 }

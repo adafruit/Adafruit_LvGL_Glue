@@ -42,10 +42,10 @@ public:
 
 private:
   LvGLStatus begin(Adafruit_SPITFT *tft, void *touch, bool debug);
-  lv_disp_drv_t lv_disp_drv;
-  lv_disp_buf_t lv_disp_buf;
-  lv_color_t *lv_pixel_buf;
-  lv_indev_drv_t lv_indev_drv;
+  static lv_disp_drv_t lv_disp_drv;
+  static lv_disp_draw_buf_t lv_disp_draw_buf;
+  static lv_color_t *lv_pixel_buf;
+  static lv_indev_drv_t lv_indev_drv;
   lv_indev_t *lv_input_dev_ptr;
 #if defined(ARDUINO_ARCH_SAMD)
   Adafruit_ZeroTimer *zerotimer;
