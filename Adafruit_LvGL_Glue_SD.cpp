@@ -29,8 +29,13 @@ static void *sd_open(lv_fs_drv_t *drv, const char *path, lv_fs_mode_t mode) {
     return NULL;
   }
 
-  file_t *fp = &file;
+  file_t *fp = (file_t *)lv_mem_alloc(sizeof(file_t));
 
+  if(fp == NULL) {
+    return NULL;
+  }
+
+  *fp = file;
   return fp;
 }
 
