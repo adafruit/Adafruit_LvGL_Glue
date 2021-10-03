@@ -15,7 +15,7 @@
 // almost works (hangs after a few button presses) and keyboard won't run
 // at all. A Feather M4 or other >32K RAM device is recommended.
 
-#define BIG_FEATHERWING 0 // Set this to 1 for 3.5" (480x320) FeatherWing!
+#define BIG_FEATHERWING 1 // Set this to 1 for 3.5" (480x320) FeatherWing!
 
 #include <Adafruit_LvGL_Glue.h> // Always include this BEFORE lvgl.h!
 #include <lvgl.h>
@@ -153,10 +153,9 @@ void delete_keyboard(lv_anim_t * a) {
 #endif
 
 // Called when the close or ok button is pressed on the keyboard
-void keyboard_event_handler(lv_obj_t *obj, lv_event_t event) {
-  lv_keyboard_def_event_cb(keyboard, event);
-
-  if(event == LV_EVENT_APPLY || event == LV_EVENT_CANCEL) {
+void keyboard_event_handler(lv_event_t * event) {
+  lv_event_code_t code = lv_event_get_code(event);
+  if(code == LV_EVENT_READY || code == LV_EVENT_CANCEL) {
 #if LV_USE_ANIMATION
     // If animation is enabled, make keyboard slide away
     lv_anim_path_t path;
@@ -179,27 +178,16 @@ void keyboard_event_handler(lv_obj_t *obj, lv_event_t event) {
 }
 
 // Other clicks in the text area
-void text_area_event_handler(lv_obj_t *obj, lv_event_t event) {
-  if(event == LV_EVENT_CLICKED) {
-
-    // Unsure why, but text area has an initial clicked event on
-    // creation, causing the keyboard to appear. This is a hacky
-    // workaround that just ignores the first click event, so
-    // subsequent actual clicks bring up the keyboard.
-    static bool first = true;
-    if(first) {
-      first = false;
-      return;
-    }
-
+void text_area_event_handler(lv_event_t * event) {
+  lv_event_code_t code = lv_event_get_code(event);
+  if(code == LV_EVENT_CLICKED) {
     if(keyboard == NULL) {
       // If not present, create keyboard object at bottom of screen
-      keyboard = lv_keyboard_create(lv_scr_act(), NULL);
+      keyboard = lv_keyboard_create(lv_scr_act());
       lv_obj_set_size(keyboard, tft.width(), tft.height() * 7 / 16);
-      lv_obj_align(keyboard, textarea, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
+      lv_obj_align_to(keyboard, textarea, LV_ALIGN_BOTTOM_MID, 0, 0);
       lv_keyboard_set_textarea(keyboard, textarea);
-      lv_keyboard_set_cursor_manage(keyboard, true);
-      lv_obj_set_event_cb(keyboard, keyboard_event_handler);
+      lv_obj_add_event_cb(keyboard, keyboard_event_handler, LV_EVENT_ALL, NULL);
 
 #if LV_USE_ANIMATION
       // If animation is enabled, make keyboard slide into place
@@ -220,11 +208,11 @@ void text_area_event_handler(lv_obj_t *obj, lv_event_t event) {
 }
 
 void lvgl_setup(void) {
-  textarea = lv_textarea_create(lv_scr_act(), NULL);
+  textarea = lv_textarea_create(lv_scr_act());
   lv_obj_set_size(textarea, LV_HOR_RES, LV_VER_RES); // Whole screen
-  lv_obj_align(textarea, NULL, LV_ALIGN_CENTER, 0, 0);
+  lv_obj_align(textarea, LV_ALIGN_CENTER, 0, 0);
   lv_textarea_set_text(textarea, "This text is editable.");
-  lv_obj_set_event_cb(textarea, text_area_event_handler);
+  lv_obj_add_event_cb(textarea, text_area_event_handler, LV_EVENT_ALL, NULL);
   lv_textarea_set_cursor_pos(textarea, LV_TEXTAREA_CURSOR_LAST);
 }
 

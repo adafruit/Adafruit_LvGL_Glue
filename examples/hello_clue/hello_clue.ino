@@ -23,9 +23,9 @@ Adafruit_LvGL_Glue glue;
 // copy-and-paste this sketch as a starting point, then embellish here:
 void lvgl_setup(void) {
   // Create simple label centered on screen
-  lv_obj_t *label = lv_label_create(lv_scr_act(), NULL);
+  lv_obj_t *label = lv_label_create(lv_scr_act());
   lv_label_set_text(label, "Hello Arduino!");
-  lv_obj_align(label, NULL, LV_ALIGN_CENTER, 0, 0);
+  lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 }
 
 void setup(void) {
