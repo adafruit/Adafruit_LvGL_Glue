@@ -16,6 +16,8 @@
 #if defined(NRF52_SERIES) // Circuit Playground Bluefruit
   #define TFT_SPI    SPI
 #else                     // Circuit Playground Express
+  // Please note this example NO LONGER FITS on Circuit Playground Express,
+  // this is just for posterity in case something's worked out later.
   #define TFT_SPI   SPI1
 #endif
 
