@@ -55,7 +55,10 @@ static lv_fs_res_t sd_close(lv_fs_drv_t *drv, void *file_p) {
   waitForDisplay(glue->display);
 
   file_t *fp = (file_t *)file_p;
-  return fp->close() ? LV_FS_RES_OK : LV_FS_RES_UNKNOWN;
+  lv_fs_res_t result = fp->close() ? LV_FS_RES_OK : LV_FS_RES_UNKNOWN;
+  lv_mem_free(fp);
+
+  return result;
 }
 
 static lv_fs_res_t sd_seek(lv_fs_drv_t * drv, void * file_p, uint32_t pos, lv_fs_whence_t whence) {
