@@ -17,7 +17,7 @@
 
 // Not recommended for SAMD21 (M0) boards -- best for SAMD51, ESP32, etc.
 
-#define BIG_FEATHERWING 0 // Set this to 1 for 3.5" (480x320) FeatherWing!
+#define BIG_FEATHERWING 1 // Set this to 1 for 3.5" (480x320) FeatherWing!
 
 // Always include this BEFORE lvgl.h
 // NOTE: this is Adafruit_LvGL_Glue_SD.h and not Adafruit_LvGL_Glue.h
@@ -62,12 +62,12 @@ void lvgl_setup(void) {
   // The cloudy.bin file (available in this example folder) should have
   // been  manually copied to the SD card first.
   // LVGL Glue initializes the LVGL file system with drive letter 'S'
-  lv_obj_t *img = lv_img_create(lv_scr_act(), NULL);
+  lv_obj_t *img = lv_img_create(lv_scr_act());
   lv_img_set_src(img, "S:cloudy.bin");
 
-  lv_obj_t *label = lv_label_create(img, NULL);
+  lv_obj_t *label = lv_label_create(img);
   lv_label_set_text(label, "Hello Arduino!");
-  lv_obj_align(label, NULL, LV_ALIGN_CENTER, 0, 0);
+  lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 }
 
 void setup(void) {

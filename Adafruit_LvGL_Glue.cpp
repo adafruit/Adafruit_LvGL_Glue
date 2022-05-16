@@ -1,6 +1,11 @@
 #include "Adafruit_LvGL_Glue.h"
 #include <lvgl.h>
 
+lv_disp_draw_buf_t Adafruit_LvGL_Glue::lv_disp_draw_buf;
+lv_disp_drv_t Adafruit_LvGL_Glue::lv_disp_drv;
+lv_color_t* Adafruit_LvGL_Glue::lv_pixel_buf;
+lv_indev_drv_t Adafruit_LvGL_Glue::lv_indev_drv;
+
 // ARCHITECTURE-SPECIFIC TIMER STUFF ---------------------------------------
 
 // Tick interval for LittlevGL internal timekeeping; 1 to 10 ms recommended
@@ -56,7 +61,7 @@ void TIMER_ISR(void) {
 #define ADC_YMIN 240
 #define ADC_YMAX 840
 
-static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
+static void touchscreen_read(struct _lv_indev_drv_t *indev_drv,
                              lv_indev_data_t *data) {
   static lv_coord_t last_x = 0, last_y = 0;
   static uint8_t release_count = 0;
@@ -104,10 +109,10 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
     }
     data->point.x = last_x; // Last-pressed coordinates
     data->point.y = last_y;
-    return false; // No buffering of ADC touch data
+    data->continue_reading = false; // No buffering of ADC touch data
   } else {
     uint8_t fifo; // Number of points in touchscreen FIFO
-    bool moar = false;
+    bool more = false;
     Adafruit_STMPE610 *touch = (Adafruit_STMPE610 *)glue->touchscreen;
     // Before accessing SPI touchscreen, wait on any in-progress
     // DMA screen transfer to finish (shared bus).
@@ -139,14 +144,14 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
         last_y = map(p.x, TS_MAXX, TS_MINX, 0, disp->height() - 1);
         break;
       }
-      moar = (fifo > 1); // true if more in FIFO, false if last point
+      more = (fifo > 1); // true if more in FIFO, false if last point
 #if defined(NRF52_SERIES)
       // Not sure what's up here, but nRF doesn't seem to always poll
       // the FIFO size correctly, causing false release events. If it
       // looks like we've read the last point from the FIFO, pause
       // briefly to allow any more FIFO events to pile up. This
       // doesn't seem to be necessary on SAMD or ESP32. ???
-      if (!moar) {
+      if (!more) {
         delay(50);
       }
 #endif
@@ -156,7 +161,7 @@ static bool touchscreen_read(struct _lv_indev_drv_t *indev_drv,
 
     data->point.x = last_x; // Last-pressed coordinates
     data->point.y = last_y;
-    return moar;
+    data->continue_reading = more;
   }
 }
 
@@ -205,13 +210,8 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
 #if (LV_USE_LOG)
 // Optional LittlevGL debug print function, writes to Serial if debug is
 // enabled when calling glue begin() function.
-static void lv_debug(lv_log_level_t level, const char *file, uint32_t line,
-                     const char *fn_name, const char *dsc) {
-  Serial.print(file);
-  Serial.write('@');
-  Serial.print(line);
-  Serial.write("->");
-  Serial.println(dsc);
+static void lv_debug(const char * buf) {
+  Serial.println(buf);
 }
 #endif
 
@@ -224,7 +224,7 @@ static void lv_debug(lv_log_level_t level, const char *file, uint32_t line,
  *
  */
 Adafruit_LvGL_Glue::Adafruit_LvGL_Glue(void)
-    : first_frame(true), lv_pixel_buf(NULL) {
+    : first_frame(true) {
 #if defined(ARDUINO_ARCH_SAMD)
   zerotimer = NULL;
 #endif
@@ -320,9 +320,9 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
   // Allocate LvGL display buffer (x2 because DMA double buffering)
   LvGLStatus status = LVGL_ERR_ALLOC;
 #if defined(USE_SPI_DMA)
-  if ((lv_pixel_buf = new lv_color_t[LV_HOR_RES_MAX * LV_BUFFER_ROWS * 2])) {
+  if ((lv_pixel_buf = new lv_color_t[tft->width() * LV_BUFFER_ROWS * 2])) {
 #else
-  if ((lv_pixel_buf = new lv_color_t[LV_HOR_RES_MAX * LV_BUFFER_ROWS])) {
+  if ((lv_pixel_buf = new lv_color_t[tft->width() * LV_BUFFER_ROWS])) {
 #endif
 
     display = tft;
@@ -330,13 +330,13 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
 
     // Initialize LvGL display buffers. The "second half" buffer is only
     // used if USE_SPI_DMA is enabled in Adafruit_GFX.
-    lv_disp_buf_init(&lv_disp_buf, lv_pixel_buf,
+    lv_disp_draw_buf_init(&lv_disp_draw_buf, lv_pixel_buf,
 #if defined(USE_SPI_DMA)
-                     &lv_pixel_buf[LV_HOR_RES_MAX * LV_BUFFER_ROWS],
+                     &lv_pixel_buf[tft->width() * LV_BUFFER_ROWS],
 #else
                      NULL, // No double-buffering
 #endif
-                     LV_HOR_RES_MAX * LV_BUFFER_ROWS);
+                     tft->width() * LV_BUFFER_ROWS);
 
     // Initialize LvGL display driver
     lv_disp_drv_init(&lv_disp_drv);
@@ -352,8 +352,8 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
     lv_disp_drv.ver_res = tft->height();
 #endif
     lv_disp_drv.flush_cb = lv_flush_callback;
-    lv_disp_drv.buffer = &lv_disp_buf;
-    lv_disp_drv.user_data = (lv_disp_drv_user_data_t)this;
+    lv_disp_drv.draw_buf = &lv_disp_draw_buf;
+    lv_disp_drv.user_data = this;
     lv_disp_drv_register(&lv_disp_drv);
 
     // Initialize LvGL input device (touchscreen already started)
@@ -361,7 +361,7 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
       lv_indev_drv_init(&lv_indev_drv);          // Basic init
       lv_indev_drv.type = LV_INDEV_TYPE_POINTER; // Is pointer dev
       lv_indev_drv.read_cb = touchscreen_read;   // Read callback
-      lv_indev_drv.user_data = (lv_indev_drv_user_data_t)this;
+      lv_indev_drv.user_data = this;
       lv_input_dev_ptr = lv_indev_drv_register(&lv_indev_drv);
     }
 
