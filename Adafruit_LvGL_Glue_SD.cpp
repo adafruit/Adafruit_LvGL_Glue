@@ -31,7 +31,7 @@ static void *sd_open(lv_fs_drv_t *drv, const char *path, lv_fs_mode_t mode) {
 
   file_t *fp = (file_t *)lv_mem_alloc(sizeof(file_t));
 
-  if(fp == NULL) {
+  if (fp == NULL) {
     return NULL;
   }
 
@@ -61,7 +61,8 @@ static lv_fs_res_t sd_close(lv_fs_drv_t *drv, void *file_p) {
   return result;
 }
 
-static lv_fs_res_t sd_seek(lv_fs_drv_t * drv, void * file_p, uint32_t pos, lv_fs_whence_t whence) {
+static lv_fs_res_t sd_seek(lv_fs_drv_t *drv, void *file_p, uint32_t pos,
+                           lv_fs_whence_t whence) {
   Adafruit_LvGL_Glue_SD *glue = (Adafruit_LvGL_Glue_SD *)drv->user_data;
   waitForDisplay(glue->display);
 

@@ -3,7 +3,7 @@
 
 lv_disp_draw_buf_t Adafruit_LvGL_Glue::lv_disp_draw_buf;
 lv_disp_drv_t Adafruit_LvGL_Glue::lv_disp_drv;
-lv_color_t* Adafruit_LvGL_Glue::lv_pixel_buf;
+lv_color_t *Adafruit_LvGL_Glue::lv_pixel_buf;
 lv_indev_drv_t Adafruit_LvGL_Glue::lv_indev_drv;
 
 // ARCHITECTURE-SPECIFIC TIMER STUFF ---------------------------------------
@@ -210,9 +210,7 @@ static void lv_flush_callback(lv_disp_drv_t *disp, const lv_area_t *area,
 #if (LV_USE_LOG)
 // Optional LittlevGL debug print function, writes to Serial if debug is
 // enabled when calling glue begin() function.
-static void lv_debug(const char * buf) {
-  Serial.println(buf);
-}
+static void lv_debug(const char *buf) { Serial.println(buf); }
 #endif
 
 // GLUE LIB FUNCTIONS ------------------------------------------------------
@@ -223,8 +221,7 @@ static void lv_debug(const char * buf) {
  * initializing minimal variables
  *
  */
-Adafruit_LvGL_Glue::Adafruit_LvGL_Glue(void)
-    : first_frame(true) {
+Adafruit_LvGL_Glue::Adafruit_LvGL_Glue(void) : first_frame(true) {
 #if defined(ARDUINO_ARCH_SAMD)
   zerotimer = NULL;
 #endif
@@ -332,11 +329,11 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
     // used if USE_SPI_DMA is enabled in Adafruit_GFX.
     lv_disp_draw_buf_init(&lv_disp_draw_buf, lv_pixel_buf,
 #if defined(USE_SPI_DMA)
-                     &lv_pixel_buf[tft->width() * LV_BUFFER_ROWS],
+                          &lv_pixel_buf[tft->width() * LV_BUFFER_ROWS],
 #else
-                     NULL, // No double-buffering
+                          NULL, // No double-buffering
 #endif
-                     tft->width() * LV_BUFFER_ROWS);
+                          tft->width() * LV_BUFFER_ROWS);
 
     // Initialize LvGL display driver
     lv_disp_drv_init(&lv_disp_drv);
