@@ -16,6 +16,14 @@ jobs:
          repository: adafruit/ci-arduino
          path: ci
 
+    # This is a hack to deal with library version constraint syntax
+    # difference between arduino-cli and arduino-lint. Repo syntax
+    # is for arduino-lint, so library will show up in Library Manager.
+    # Hack modifies library.properties to arduino-cli syntax, so CI
+    # which uses arduino-cli will run.
+    - name: <HACK> modify library.properties <HACK>
+      run: sed -i 's/lvgl (=8.2.0)/lvgl@8.2.0/' library.properties
+
     - name: pre-install
       run: bash ci/actions_install.sh
 
