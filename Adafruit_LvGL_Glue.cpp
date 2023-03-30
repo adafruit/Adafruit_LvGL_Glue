@@ -57,16 +57,16 @@ void TIMER_ISR(void) {
 
 // Same, for ADC touchscreen
 #ifndef ADC_XMIN
-  #define ADC_XMIN 325
+#define ADC_XMIN 325
 #endif
 #ifndef ADC_XMAX
-  #define ADC_XMAX 750
+#define ADC_XMAX 750
 #endif
 #ifndef ADC_YMIN
-  #define ADC_YMIN 240
+#define ADC_YMIN 240
 #endif
 #ifndef ADC_YMAX
-  #define ADC_YMAX 840
+#define ADC_YMAX 840
 #endif
 
 static void touchscreen_read(struct _lv_indev_drv_t *indev_drv,
