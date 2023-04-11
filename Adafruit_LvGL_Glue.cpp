@@ -1,6 +1,8 @@
 #include "Adafruit_LvGL_Glue.h"
 #include <lvgl.h>
 
+#define USE_SPI_DMA
+
 lv_disp_draw_buf_t Adafruit_LvGL_Glue::lv_disp_draw_buf;
 lv_disp_drv_t Adafruit_LvGL_Glue::lv_disp_drv;
 lv_color_t *Adafruit_LvGL_Glue::lv_pixel_buf;
@@ -26,7 +28,12 @@ static void timerCallback0(void) { lv_tick_inc(lv_tick_interval_ms); }
 
 #elif defined(ESP32) // ------------------------------------------------
 
-static void lv_tick_handler(void) { lv_tick_inc(lv_tick_interval_ms); }
+// static void IRAM_ATTR lv_tick_handler(void) { lv_tick_inc(lv_tick_interval_ms); }
+static void IRAM_ATTR lv_tick_task(void *arg) {
+    (void) arg;
+
+    lv_tick_inc(lv_tick_interval_ms);
+}
 
 #elif defined(NRF52_SERIES) // -----------------------------------------
 
@@ -179,7 +186,9 @@ static void touchscreen_read(struct _lv_indev_drv_t *indev_drv,
 #ifdef _SAMD21_
 #define LV_BUFFER_ROWS 4 // Don't hog all the RAM on SAMD21
 #else
-#define LV_BUFFER_ROWS 8 // Most others have a bit more space
+// NOTE FOR MONDAY: The last thing you did was chang ethis from 8 to 32,
+// in order to test crashes, also using PSRAM now within lv_conf
+#define LV_BUFFER_ROWS 32 // Most others have a bit more space
 #endif
 
 // This is the flush function required for LittlevGL screen updates.
@@ -317,9 +326,11 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
   // Allocate LvGL display buffer (x2 because DMA double buffering)
   LvGLStatus status = LVGL_ERR_ALLOC;
 #if defined(USE_SPI_DMA)
-  if ((lv_pixel_buf = new lv_color_t[tft->width() * LV_BUFFER_ROWS * 2])) {
+  // if ((lv_pixel_buf = new lv_color_t[tft->width() * LV_BUFFER_ROWS * 2])) {
+  if ((lv_pixel_buf = (lv_color_t *)heap_caps_malloc(tft->width() * LV_BUFFER_ROWS * 8, MALLOC_CAP_DMA | MALLOC_CAP_32BIT))) {
 #else
-  if ((lv_pixel_buf = new lv_color_t[tft->width() * LV_BUFFER_ROWS])) {
+  // if ((lv_pixel_buf = new lv_color_t[tft->width() * LV_BUFFER_ROWS])) {
+  if ((lv_pixel_buf = (lv_color_t *)heap_caps_malloc(tft->width() * LV_BUFFER_ROWS * 8, MALLOC_CAP_DMA | MALLOC_CAP_32BIT))) {
 #endif
 
     display = tft;
@@ -414,7 +425,15 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
 
 #elif defined(ESP32) // ------------------------------------------------
 
-    tick.attach_ms(lv_tick_interval_ms, lv_tick_handler);
+    // tick.attach_ms(lv_tick_interval_ms, lv_tick_handler);
+    /* Create and start a periodic timer interrupt to call lv_tick_inc */
+    const esp_timer_create_args_t periodic_timer_args = {
+        .callback = &lv_tick_task,
+        .name = "periodic_gui"
+    };
+    esp_timer_handle_t periodic_timer;
+    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, lv_tick_interval_ms * 1000));
     status = LVGL_OK;
 
 #elif defined(NRF52_SERIES) // -----------------------------------------
