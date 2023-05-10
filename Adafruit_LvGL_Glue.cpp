@@ -1,5 +1,6 @@
 #include "Adafruit_LvGL_Glue.h"
 #include <lvgl.h>
+#include "esp_log.h"
 
 #define USE_SPI_DMA
 
@@ -11,7 +12,7 @@ lv_indev_drv_t Adafruit_LvGL_Glue::lv_indev_drv;
 // ARCHITECTURE-SPECIFIC TIMER STUFF ---------------------------------------
 
 // Tick interval for LittlevGL internal timekeeping; 1 to 10 ms recommended
-static const int lv_tick_interval_ms = 10;
+static const int lv_tick_interval_ms = 5;
 
 #if defined(ARDUINO_ARCH_SAMD) // --------------------------------------
 
@@ -28,11 +29,55 @@ static void timerCallback0(void) { lv_tick_inc(lv_tick_interval_ms); }
 
 #elif defined(ESP32) // ------------------------------------------------
 
-// static void IRAM_ATTR lv_tick_handler(void) { lv_tick_inc(lv_tick_interval_ms); }
-static void IRAM_ATTR lv_tick_task(void *arg) {
-    (void) arg;
+static const char *TAG = "lvgl_gui";
 
+#define ESP_GOTO_ON_FALSE(a, err_code, goto_tag, log_tag, format, ...) do {                                \
+        if (unlikely(!(a))) {                                                                              \
+            ESP_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__ __VA_OPT__(,) __VA_ARGS__);        \
+            ret = err_code;                                                                                \
+            goto goto_tag;                                                                                 \
+        }                                                                                                  \
+    } while (0)
+
+/* Creates a semaphore to handle concurrent call to lvgl stuff
+ * If you wish to call *any* lvgl function from other threads/tasks
+ * you should lock on the very same semaphore! */
+static SemaphoreHandle_t xGuiSemaphore = NULL;
+static TaskHandle_t g_lvgl_task_handle;
+
+static void IRAM_ATTR lv_tick_handler(void *arg) {
+    (void) arg;
     lv_tick_inc(lv_tick_interval_ms);
+}
+
+static void gui_task(void *args)
+{
+    // ESP_LOGI(TAG, "Start to run LVGL");
+    while (1) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        /* Try to take the semaphore, call lvgl related function on success */
+        if (pdTRUE == xSemaphoreTake(xGuiSemaphore, portMAX_DELAY)) {
+            lv_task_handler();
+            xSemaphoreGive(xGuiSemaphore);
+        }
+    }
+}
+
+void lvgl_acquire(void)
+{
+    TaskHandle_t task = xTaskGetCurrentTaskHandle();
+    if (g_lvgl_task_handle != task) {
+        xSemaphoreTake(xGuiSemaphore, portMAX_DELAY);
+    }
+}
+
+void lvgl_release(void)
+{
+    TaskHandle_t task = xTaskGetCurrentTaskHandle();
+    if (g_lvgl_task_handle != task) {
+        xSemaphoreGive(xGuiSemaphore);
+    }
 }
 
 #elif defined(NRF52_SERIES) // -----------------------------------------
@@ -316,6 +361,7 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, bool debug) {
 LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
                                      bool debug) {
 
+  // Initialize LVGL
   lv_init();
 #if (LV_USE_LOG)
   if (debug) {
@@ -425,16 +471,34 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
 
 #elif defined(ESP32) // ------------------------------------------------
 
-    // tick.attach_ms(lv_tick_interval_ms, lv_tick_handler);
-    /* Create and start a periodic timer interrupt to call lv_tick_inc */
+    esp_err_t ret;
+
+    /* Create a periodic timer interrupt to call lv_tick_inc */
     const esp_timer_create_args_t periodic_timer_args = {
-        .callback = &lv_tick_task,
+        .callback = &lv_tick_handler,
         .name = "periodic_gui"
     };
     esp_timer_handle_t periodic_timer;
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
+    
+    // Create xGUISemaphore
+    xGuiSemaphore = xSemaphoreCreateMutex();
+    // Check if created OK
+    if (xGuiSemaphore == NULL) {
+        return LVGL_ERR_TIMER;
+    }
+    //ESP_GOTO_ON_FALSE(NULL != xGuiSemaphore, ESP_FAIL, err, TAG, "Create mutex for LVGL failed");
+
+    // Pin LVGL to core 1
+    if (xTaskCreatePinnedToCore(gui_task, "lv_gui", 1024 * 8, NULL, 5, &g_lvgl_task_handle, 1) != pdPASS)
+    {
+        return LVGL_ERR_TIMER;
+    }
+
+    // Start timer
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, lv_tick_interval_ms * 1000));
     status = LVGL_OK;
+
 
 #elif defined(NRF52_SERIES) // -----------------------------------------
 
