@@ -31,32 +31,27 @@ static void timerCallback0(void) { lv_tick_inc(lv_tick_interval_ms); }
 
 static const char *TAG = "lvgl_gui";
 
-#define ESP_GOTO_ON_FALSE(a, err_code, goto_tag, log_tag, format, ...) do {                                \
-        if (unlikely(!(a))) {                                                                              \
-            ESP_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__ __VA_OPT__(,) __VA_ARGS__);        \
-            ret = err_code;                                                                                \
-            goto goto_tag;                                                                                 \
-        }                                                                                                  \
-    } while (0)
-
-/* Creates a semaphore to handle concurrent call to lvgl stuff
- * If you wish to call *any* lvgl function from other threads/tasks
- * you should lock on the very same semaphore! */
+// Semaphore to handle concurrent calls to LVGL
+// If you wish to call *any* lvgl function from other threads/tasks
+// you should use lvgl_acquire()/lvgl_release()
 static SemaphoreHandle_t xGuiSemaphore = NULL;
 static TaskHandle_t g_lvgl_task_handle;
 
+// Handles the lvgl timer
+// NOTE: We use IRAM_ATTR here to place this code into RAM rather than Flash
 static void IRAM_ATTR lv_tick_handler(void *arg) {
     (void) arg;
     lv_tick_inc(lv_tick_interval_ms);
 }
 
+// Task used to update the LVGL UI
 static void gui_task(void *args)
 {
-    // ESP_LOGI(TAG, "Start to run LVGL");
     while (1) {
-        vTaskDelay(pdMS_TO_TICKS(10));
+        // Delay 1 tick (follows lv_tick_interval_ms)
+        vTaskDelay(pdMS_TO_TICKS(lv_tick_interval_ms));
 
-        /* Try to take the semaphore, call lvgl related function on success */
+        // Try to take the semaphore, call lvgl task handler function on success
         if (pdTRUE == xSemaphoreTake(xGuiSemaphore, portMAX_DELAY)) {
             lv_task_handler();
             xSemaphoreGive(xGuiSemaphore);
@@ -64,7 +59,9 @@ static void gui_task(void *args)
     }
 }
 
-void lvgl_acquire(void)
+// Locks the LVGL resource to prevent memory corruption
+// This function MUST be called BEFORE a `lv_` function is called from application code
+void Adafruit_LvGL_Glue::lvgl_acquire(void)
 {
     TaskHandle_t task = xTaskGetCurrentTaskHandle();
     if (g_lvgl_task_handle != task) {
@@ -72,7 +69,9 @@ void lvgl_acquire(void)
     }
 }
 
-void lvgl_release(void)
+// Unlocks the LVGL resource to prevent memory corruption
+// This function MUST be called in application code AFTER lvgl_acquire()
+void Adafruit_LvGL_Glue::lvgl_release(void)
 {
     TaskHandle_t task = xTaskGetCurrentTaskHandle();
     if (g_lvgl_task_handle != task) {
@@ -483,16 +482,15 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
     
     // Create xGUISemaphore
     xGuiSemaphore = xSemaphoreCreateMutex();
-    // Check if created OK
     if (xGuiSemaphore == NULL) {
-        return LVGL_ERR_TIMER;
+        return LVGL_ERR_TIMER; // failure
     }
-    //ESP_GOTO_ON_FALSE(NULL != xGuiSemaphore, ESP_FAIL, err, TAG, "Create mutex for LVGL failed");
 
-    // Pin LVGL to core 1
-    if (xTaskCreatePinnedToCore(gui_task, "lv_gui", 1024 * 8, NULL, 5, &g_lvgl_task_handle, 1) != pdPASS)
+    // Pin the LVGL gui task to core 1
+    // TODO: For ESP32-S2/C3, this will need to be pined to core 0
+    if (xTaskCreatePinnedToCore(gui_task, "lvgl_gui", 1024 * 8, NULL, 5, &g_lvgl_task_handle, 1) != pdPASS)
     {
-        return LVGL_ERR_TIMER;
+        return LVGL_ERR_TIMER; // failure
     }
 
     // Start timer

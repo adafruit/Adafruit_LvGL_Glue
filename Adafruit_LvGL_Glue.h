@@ -15,6 +15,8 @@ typedef enum {
   LVGL_OK,
   LVGL_ERR_ALLOC,
   LVGL_ERR_TIMER,
+  LVGL_ERR_MUTEX,
+  LVGL_ERR_TASK
 } LvGLStatus;
 
 /**
@@ -39,6 +41,11 @@ public:
   bool is_adc_touch; ///< determines if the touchscreen controlelr is ADC based
   bool first_frame;  ///< Tracks if a call to `lv_flush_callback` needs to wait
                      ///< for DMA transfer to complete
+
+  #ifdef ESP32
+  void lvgl_acquire();
+  void lvgl_release();
+  #endif
 
 private:
   LvGLStatus begin(Adafruit_SPITFT *tft, void *touch, bool debug);
