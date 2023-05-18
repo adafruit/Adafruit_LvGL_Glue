@@ -371,11 +371,9 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
   // Allocate LvGL display buffer (x2 because DMA double buffering)
   LvGLStatus status = LVGL_ERR_ALLOC;
 #if defined(USE_SPI_DMA)
-  // if ((lv_pixel_buf = new lv_color_t[tft->width() * LV_BUFFER_ROWS * 2])) {
-  if ((lv_pixel_buf = (lv_color_t *)heap_caps_malloc(tft->width() * LV_BUFFER_ROWS * 8, MALLOC_CAP_DMA | MALLOC_CAP_32BIT))) {
+  if ((lv_pixel_buf = new lv_color_t[tft->width() * LV_BUFFER_ROWS * 2])) {
 #else
-  // if ((lv_pixel_buf = new lv_color_t[tft->width() * LV_BUFFER_ROWS])) {
-  if ((lv_pixel_buf = (lv_color_t *)heap_caps_malloc(tft->width() * LV_BUFFER_ROWS * 8, MALLOC_CAP_DMA | MALLOC_CAP_32BIT))) {
+  if ((lv_pixel_buf = new lv_color_t[tft->width() * LV_BUFFER_ROWS])) {
 #endif
 
     display = tft;
