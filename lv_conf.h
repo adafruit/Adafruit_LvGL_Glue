@@ -44,27 +44,37 @@
    MEMORY SETTINGS
  *=========================*/
 
-/*1: use custom malloc/free, 0: use the built-in `lv_mem_alloc()` and `lv_mem_free()`*/
+/*1: use custom malloc/free, 0: use the built-in `lv_mem_alloc()` and
+ * `lv_mem_free()`*/
 #define LV_MEM_CUSTOM 0
 #if LV_MEM_CUSTOM == 0
-    /*Size of the memory available for `lv_mem_alloc()` in bytes (>= 2kB)*/
-    #define LV_MEM_SIZE (32U * 1024U)          /*[bytes]*/
-    // 131,072
-    // 38,528
-    /*Set an address for the memory pool instead of allocating it as a normal array. Can be in external SRAM too.*/
-    #define LV_MEM_ADR 0     /*0: unused*/
-    /*Instead of an address give a memory allocator that will be called to get a memory pool for LVGL. E.g. my_malloc*/
-    #if LV_MEM_ADR == 0
-        #define LV_MEM_POOL_INCLUDE <esp32-hal-psram.h>
-        #define LV_MEM_POOL_ALLOC ps_malloc
-    #endif
+/*Size of the memory available for `lv_mem_alloc()` in bytes (>= 2kB)*/
+#define LV_MEM_SIZE (32U * 1024U) /*[bytes]*/
 
-#else       /*LV_MEM_CUSTOM*/
-    #define LV_MEM_CUSTOM_INCLUDE <stdlib.h>   /*Header for the dynamic memory function*/
-    #define LV_MEM_CUSTOM_ALLOC   malloc
-    #define LV_MEM_CUSTOM_FREE    free
-    #define LV_MEM_CUSTOM_REALLOC realloc
-#endif     /*LV_MEM_CUSTOM*/
+/*Set an address for the memory pool instead of allocating it as a normal array.
+ * Can be in external SRAM too.*/
+#define LV_MEM_ADR 0 /*0: unused*/
+
+// For ESP32, give a memory pool allocator and use the PSRAM instead of flash
+#ifdef ESP32
+#if LV_MEM_ADR == 0
+    #define LV_MEM_POOL_INCLUDE <esp32-hal-psram.h>
+    #define LV_MEM_POOL_ALLOC ps_malloc
+#endif
+#endif
+
+
+#else                /*LV_MEM_CUSTOM*/
+#define LV_MEM_CUSTOM_INCLUDE                                                  \
+  <stdlib.h> /*Header for the dynamic memory function*/
+#define LV_MEM_CUSTOM_ALLOC malloc
+#define LV_MEM_CUSTOM_FREE free
+#define LV_MEM_CUSTOM_REALLOC realloc
+#endif /*LV_MEM_CUSTOM*/
+
+/*Use the standard `memcpy` and `memset` instead of LVGL's own functions. (Might
+ * or might not be faster).*/
+#define LV_MEMCPY_MEMSET_STD 0
 
 /*====================
    HAL SETTINGS
@@ -155,7 +165,7 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
  *-----------*/
 
 /*Enable the log module*/
-#define LV_USE_LOG 0
+#define LV_USE_LOG 1
 #if LV_USE_LOG
 
 /*How important log should be added:
@@ -169,7 +179,7 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 
 /*1: Print the log with 'printf';
  *0: User need to register a callback with `lv_log_register_print_cb()`*/
-#define LV_LOG_PRINTF 1
+#define LV_LOG_PRINTF 0
 
 /*Enable/disable LV_LOG_TRACE in modules that produces a huge number of logs*/
 #define LV_LOG_TRACE_MEM 1
@@ -195,7 +205,7 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
   1 /*Checks is the memory is successfully allocated or no. (Very fast,        \
        recommended)*/
 #define LV_USE_ASSERT_STYLE                                                    \
-  1 /*Check if the styles are properly initialized. (Very fast, recommended)*/
+  0 /*Check if the styles are properly initialized. (Very fast, recommended)*/
 #define LV_USE_ASSERT_MEM_INTEGRITY                                            \
   0 /*Check the integrity of `lv_mem` after critical operations. (Slow)*/
 #define LV_USE_ASSERT_OBJ                                                      \
@@ -204,21 +214,19 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 /*Add a custom handler when assert happens e.g. to restart the MCU*/
 #define LV_ASSERT_HANDLER_INCLUDE <stdint.h>
 #define LV_ASSERT_HANDLER                                                      \
-  LV_LOG_INFO("test");
-
-//  while (1)                                                                    \
-//    ; /*Halt by default*/
+  while (1)                                                                    \
+    ; /*Halt by default*/
 
 /*-------------
  * Others
  *-----------*/
 
 /*1: Show CPU usage and FPS count in the right bottom corner*/
-#define LV_USE_PERF_MONITOR 1
+#define LV_USE_PERF_MONITOR 0
 
 /*1: Show the used memory and the memory fragmentation  in the left bottom
  * corner Requires LV_MEM_CUSTOM = 0*/
-#define LV_USE_MEM_MONITOR 1
+#define LV_USE_MEM_MONITOR 0
 
 /*1: Draw random colored rectangles over the redrawn areas*/
 #define LV_USE_REFR_DEBUG 0
@@ -251,7 +259,11 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 #define LV_BIG_ENDIAN_SYSTEM 0
 
 /*Define a custom attribute to `lv_tick_inc` function*/
+#ifdef ESP32
 #define LV_ATTRIBUTE_TICK_INC IRAM_ATTR
+#else
+#define LV_ATTRIBUTE_TICK_INC
+#endif
 
 /*Define a custom attribute to `lv_timer_handler` function*/
 #define LV_ATTRIBUTE_TIMER_HANDLER
@@ -273,7 +285,11 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 #define LV_ATTRIBUTE_LARGE_RAM_ARRAY
 
 /*Place performance critical functions into a faster memory (e.g RAM)*/
+#ifdef ESP32
 #define LV_ATTRIBUTE_FAST_MEM IRAM_ATTR
+#else
+#define LV_ATTRIBUTE_FAST_MEM
+#endif
 
 /*Prefix variables that are used in GPU accelerated operations, often these need
  * to be placed in RAM sections that are DMA accessible*/
@@ -296,12 +312,12 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 /*Montserrat fonts with ASCII range and some symbols using bpp = 4
  *https://fonts.google.com/specimen/Montserrat*/
 #define LV_FONT_MONTSERRAT_8 0
-#define LV_FONT_MONTSERRAT_10 1
-#define LV_FONT_MONTSERRAT_12 1
+#define LV_FONT_MONTSERRAT_10 0
+#define LV_FONT_MONTSERRAT_12 0
 #define LV_FONT_MONTSERRAT_14 1
-#define LV_FONT_MONTSERRAT_16 1
-#define LV_FONT_MONTSERRAT_18 1
-#define LV_FONT_MONTSERRAT_20 1
+#define LV_FONT_MONTSERRAT_16 0
+#define LV_FONT_MONTSERRAT_18 0
+#define LV_FONT_MONTSERRAT_20 0
 #define LV_FONT_MONTSERRAT_22 0
 #define LV_FONT_MONTSERRAT_24 0
 #define LV_FONT_MONTSERRAT_26 0

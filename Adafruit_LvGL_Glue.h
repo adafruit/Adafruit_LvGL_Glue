@@ -43,8 +43,8 @@ public:
                      ///< for DMA transfer to complete
 
   #ifdef ESP32
-  void lvgl_acquire();
-  void lvgl_release();
+  void lvgl_acquire(); ///< Acquires the lock around the lvgl object
+  void lvgl_release(); ///< Releases the lock around the lvgl object
   #endif
 
 private:
