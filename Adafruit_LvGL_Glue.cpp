@@ -1,8 +1,5 @@
 #include "Adafruit_LvGL_Glue.h"
 #include <lvgl.h>
-#include "esp_log.h"
-
-#define USE_SPI_DMA
 
 lv_disp_draw_buf_t Adafruit_LvGL_Glue::lv_disp_draw_buf;
 lv_disp_drv_t Adafruit_LvGL_Glue::lv_disp_drv;
@@ -12,7 +9,7 @@ lv_indev_drv_t Adafruit_LvGL_Glue::lv_indev_drv;
 // ARCHITECTURE-SPECIFIC TIMER STUFF ---------------------------------------
 
 // Tick interval for LittlevGL internal timekeeping; 1 to 10 ms recommended
-static const int lv_tick_interval_ms = 5;
+static const int lv_tick_interval_ms = 10;
 
 #if defined(ARDUINO_ARCH_SAMD) // --------------------------------------
 
@@ -28,23 +25,23 @@ void TIMER_ISR(void) { Adafruit_ZeroTimer::timerHandler(TIMER_NUM); }
 static void timerCallback0(void) { lv_tick_inc(lv_tick_interval_ms); }
 
 #elif defined(ESP32) // ------------------------------------------------
-
-static const char *TAG = "lvgl_gui";
+// The following preprocessor code segments are based around the LVGL example project for ESP32:
+// https://github.com/lvgl/lv_port_esp32/blob/master/main/main.c
 
 // Semaphore to handle concurrent calls to LVGL
 // If you wish to call *any* lvgl function from other threads/tasks
-// you should use lvgl_acquire()/lvgl_release()
+// on ESP32, wrap the lvgl function calls inside of lvgl_acquire() and lvgl_release()
 static SemaphoreHandle_t xGuiSemaphore = NULL;
 static TaskHandle_t g_lvgl_task_handle;
 
-// Handles the lvgl timer
-// NOTE: We use IRAM_ATTR here to place this code into RAM rather than Flash
+// Periodic timer handler
+// NOTE: We use the IRAM_ATTR here to place this code into RAM rather than flash
 static void IRAM_ATTR lv_tick_handler(void *arg) {
     (void) arg;
     lv_tick_inc(lv_tick_interval_ms);
 }
 
-// Task used to update the LVGL UI
+// Pinned task used to update the GUI, called by FreeRTOS
 static void gui_task(void *args)
 {
     while (1) {
@@ -59,8 +56,10 @@ static void gui_task(void *args)
     }
 }
 
-// Locks the LVGL resource to prevent memory corruption
-// This function MUST be called BEFORE a `lv_` function is called from application code
+/**
+ * @brief Locks LVGL resource to prevent memory corrupton on ESP32.
+ * NOTE: This function MUST be called PRIOR to a LVGL function (`lv_`) call.
+ */
 void Adafruit_LvGL_Glue::lvgl_acquire(void)
 {
     TaskHandle_t task = xTaskGetCurrentTaskHandle();
@@ -69,8 +68,10 @@ void Adafruit_LvGL_Glue::lvgl_acquire(void)
     }
 }
 
-// Unlocks the LVGL resource to prevent memory corruption
-// This function MUST be called in application code AFTER lvgl_acquire()
+/**
+ * @brief Unlocks LVGL resource to prevent memory corrupton on ESP32.
+ * NOTE: This function MUST be called in application code AFTER lvgl_acquire()
+ */
 void Adafruit_LvGL_Glue::lvgl_release(void)
 {
     TaskHandle_t task = xTaskGetCurrentTaskHandle();
