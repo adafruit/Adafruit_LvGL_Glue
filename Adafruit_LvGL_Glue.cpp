@@ -416,6 +416,9 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
       lv_input_dev_ptr = lv_indev_drv_register(&lv_indev_drv);
     }
 
+    // Initialize buttons for FunHouse
+    
+
     // TIMER SETUP is architecture-specific ----------------------------
 
 #if defined(ARDUINO_ARCH_SAMD) // --------------------------------------
