@@ -42,10 +42,10 @@ public:
   bool first_frame;  ///< Tracks if a call to `lv_flush_callback` needs to wait
                      ///< for DMA transfer to complete
 
-  #ifdef ESP32
+#ifdef ESP32
   void lvgl_acquire(); ///< Acquires the lock around the lvgl object
   void lvgl_release(); ///< Releases the lock around the lvgl object
-  #endif
+#endif
 
 private:
   LvGLStatus begin(Adafruit_SPITFT *tft, void *touch, bool debug);

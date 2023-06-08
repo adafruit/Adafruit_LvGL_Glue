@@ -58,13 +58,12 @@
 // For ESP32, give a memory pool allocator and use the PSRAM instead of flash
 #ifdef ESP32
 #if LV_MEM_ADR == 0
-    #define LV_MEM_POOL_INCLUDE <esp32-hal-psram.h>
-    #define LV_MEM_POOL_ALLOC ps_malloc
+#define LV_MEM_POOL_INCLUDE <esp32-hal-psram.h>
+#define LV_MEM_POOL_ALLOC ps_malloc
 #endif
 #endif
 
-
-#else                /*LV_MEM_CUSTOM*/
+#else /*LV_MEM_CUSTOM*/
 #define LV_MEM_CUSTOM_INCLUDE                                                  \
   <stdlib.h> /*Header for the dynamic memory function*/
 #define LV_MEM_CUSTOM_ALLOC malloc
