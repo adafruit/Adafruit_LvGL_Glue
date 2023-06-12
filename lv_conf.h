@@ -54,7 +54,16 @@
 /*Set an address for the memory pool instead of allocating it as a normal array.
  * Can be in external SRAM too.*/
 #define LV_MEM_ADR 0 /*0: unused*/
-#else                /*LV_MEM_CUSTOM*/
+
+// For ESP32, give a memory pool allocator and use the PSRAM instead of flash
+#ifdef ESP32
+#if LV_MEM_ADR == 0
+#define LV_MEM_POOL_INCLUDE <esp32-hal-psram.h>
+#define LV_MEM_POOL_ALLOC ps_malloc
+#endif
+#endif
+
+#else /*LV_MEM_CUSTOM*/
 #define LV_MEM_CUSTOM_INCLUDE                                                  \
   <stdlib.h> /*Header for the dynamic memory function*/
 #define LV_MEM_CUSTOM_ALLOC malloc
@@ -249,7 +258,11 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 #define LV_BIG_ENDIAN_SYSTEM 0
 
 /*Define a custom attribute to `lv_tick_inc` function*/
+#ifdef ESP32
+#define LV_ATTRIBUTE_TICK_INC IRAM_ATTR
+#else
 #define LV_ATTRIBUTE_TICK_INC
+#endif
 
 /*Define a custom attribute to `lv_timer_handler` function*/
 #define LV_ATTRIBUTE_TIMER_HANDLER
@@ -271,7 +284,11 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 #define LV_ATTRIBUTE_LARGE_RAM_ARRAY
 
 /*Place performance critical functions into a faster memory (e.g RAM)*/
+#ifdef ESP32
+#define LV_ATTRIBUTE_FAST_MEM IRAM_ATTR
+#else
 #define LV_ATTRIBUTE_FAST_MEM
+#endif
 
 /*Prefix variables that are used in GPU accelerated operations, often these need
  * to be placed in RAM sections that are DMA accessible*/

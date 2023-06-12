@@ -36,6 +36,11 @@ Use on M0 (SAMD21) boards is no longer recommended, as LittlevGL has grown.
 Simple programs might still work, but it's better to move up to a device
 with more RAM -- M4 (SAMD51), nRF52 and ESP32 are currently supported.
 
+# Notes for ESP32
+
+If you wish to use LVGL with WiFi or Bluetooth on the ESP32 (or any other functions that have high memory utilization), wrap the LVGL function calls (`lv_xyz()` functions) inside calls to `lvgl_acquire()` and `lvgl_release()`.
+
+
 # Contributing
 Contributions are welcome! Please read our [Code of Conduct](https://github.com/adafruit/Adafruit_LvGL_Glue/blob/master/CODE_OF_CONDUCT.md>)
 before contributing to help this project stay welcoming.

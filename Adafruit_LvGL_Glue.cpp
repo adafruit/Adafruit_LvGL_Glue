@@ -25,8 +25,59 @@ void TIMER_ISR(void) { Adafruit_ZeroTimer::timerHandler(TIMER_NUM); }
 static void timerCallback0(void) { lv_tick_inc(lv_tick_interval_ms); }
 
 #elif defined(ESP32) // ------------------------------------------------
+// The following preprocessor code segments are based around the LVGL example
+// project for ESP32:
+// https://github.com/lvgl/lv_port_esp32/blob/master/main/main.c
 
-static void lv_tick_handler(void) { lv_tick_inc(lv_tick_interval_ms); }
+// Semaphore to handle concurrent calls to LVGL
+// If you wish to call *any* lvgl function from other threads/tasks
+// on ESP32, wrap the lvgl function calls inside of lvgl_acquire() and
+// lvgl_release()
+static SemaphoreHandle_t xGuiSemaphore = NULL;
+static TaskHandle_t g_lvgl_task_handle;
+
+// Periodic timer handler
+// NOTE: We use the IRAM_ATTR here to place this code into RAM rather than flash
+static void IRAM_ATTR lv_tick_handler(void *arg) {
+  (void)arg;
+  lv_tick_inc(lv_tick_interval_ms);
+}
+
+// Pinned task used to update the GUI, called by FreeRTOS
+static void gui_task(void *args) {
+  while (1) {
+    // Delay 1 tick (follows lv_tick_interval_ms)
+    vTaskDelay(pdMS_TO_TICKS(lv_tick_interval_ms));
+
+    // Try to take the semaphore, call lvgl task handler function on success
+    if (pdTRUE == xSemaphoreTake(xGuiSemaphore, portMAX_DELAY)) {
+      lv_task_handler();
+      xSemaphoreGive(xGuiSemaphore);
+    }
+  }
+}
+
+/**
+ * @brief Locks LVGL resource to prevent memory corrupton on ESP32.
+ * NOTE: This function MUST be called PRIOR to a LVGL function (`lv_`) call.
+ */
+void Adafruit_LvGL_Glue::lvgl_acquire(void) {
+  TaskHandle_t task = xTaskGetCurrentTaskHandle();
+  if (g_lvgl_task_handle != task) {
+    xSemaphoreTake(xGuiSemaphore, portMAX_DELAY);
+  }
+}
+
+/**
+ * @brief Unlocks LVGL resource to prevent memory corrupton on ESP32.
+ * NOTE: This function MUST be called in application code AFTER lvgl_acquire()
+ */
+void Adafruit_LvGL_Glue::lvgl_release(void) {
+  TaskHandle_t task = xTaskGetCurrentTaskHandle();
+  if (g_lvgl_task_handle != task) {
+    xSemaphoreGive(xGuiSemaphore);
+  }
+}
 
 #elif defined(NRF52_SERIES) // -----------------------------------------
 
@@ -413,8 +464,36 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
     }
 
 #elif defined(ESP32) // ------------------------------------------------
+    // Create a periodic timer to call `lv_tick_handler`
+    const esp_timer_create_args_t periodic_timer_args = {
+        .callback = &lv_tick_handler, .name = "lv_tick_handler"};
+    esp_timer_handle_t periodic_timer;
+    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
 
-    tick.attach_ms(lv_tick_interval_ms, lv_tick_handler);
+    // Create a new mutex
+    xGuiSemaphore = xSemaphoreCreateMutex();
+    if (xGuiSemaphore == NULL) {
+      return LVGL_ERR_MUTEX; // failure
+    }
+
+    // Pin the LVGL gui task to core 1
+    // TODO: For ESP32-S2/C3, this will need to be pined to core 0
+
+#ifdef CONFIG_IDF_TARGET_ESP32C3
+    // For unicore ESP32-x, pin GUI task to core 0
+    if (xTaskCreatePinnedToCore(gui_task, "lvgl_gui", 1024 * 8, NULL, 5,
+                                &g_lvgl_task_handle, 0) != pdPASS)
+      return LVGL_ERR_TASK; // failure
+#else
+    // For multicore ESP32-x, pin GUI task to core 1 to allow WiFi on core 0
+    if (xTaskCreatePinnedToCore(gui_task, "lvgl_gui", 1024 * 8, NULL, 5,
+                                &g_lvgl_task_handle, 1) != pdPASS)
+      return LVGL_ERR_TASK; // failure
+#endif
+
+    // Start timer
+    ESP_ERROR_CHECK(
+        esp_timer_start_periodic(periodic_timer, lv_tick_interval_ms * 1000));
     status = LVGL_OK;
 
 #elif defined(NRF52_SERIES) // -----------------------------------------
