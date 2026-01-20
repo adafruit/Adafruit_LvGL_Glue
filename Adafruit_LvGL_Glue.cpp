@@ -367,9 +367,6 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, Adafruit_TSC2007 *tou
 LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, Adafruit_STMPE610 *touch,
                                      bool debug) {
 #endif
-  String LVGL_Arduino = "Hello Arduino! ";
-  LVGL_Arduino += String('V') + lv_version_major() + "." + lv_version_minor() + "." + lv_version_patch();
-  Serial.println(LVGL_Arduino);
   lv_init();
 #if (LV_USE_LOG)
   if (debug) {
