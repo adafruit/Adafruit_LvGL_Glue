@@ -100,11 +100,18 @@ void TIMER_ISR(void) {
 
 // TOUCHSCREEN STUFF -------------------------------------------------------
 
-// STMPE610 calibration for raw touch data
+// STMPE610/TSC2007 calibration for raw touch data
+#if TSC2007_TS
+#define TS_MINX 300
+#define TS_MAXX 3800
+#define TS_MINY 185
+#define TS_MAXY 3700
+#else
 #define TS_MINX 100
 #define TS_MAXX 3800
 #define TS_MINY 100
 #define TS_MAXY 3750
+#endif //TSC2007_TS
 
 // Same, for ADC touchscreen
 #define ADC_XMIN 325
@@ -121,6 +128,7 @@ static void touchscreen_read(struct _lv_indev_drv_t *indev_drv,
   Adafruit_LvGL_Glue *glue = (Adafruit_LvGL_Glue *)indev_drv->user_data;
   Adafruit_SPITFT *disp = glue->display;
 
+#ifdef __USE_TOUCHSCREEN_H__
   if (glue->is_adc_touch) {
     TouchScreen *touch = (TouchScreen *)glue->touchscreen;
     TSPoint p = touch->getPoint();
@@ -162,19 +170,36 @@ static void touchscreen_read(struct _lv_indev_drv_t *indev_drv,
     data->point.y = last_y;
     data->continue_reading = false; // No buffering of ADC touch data
   } else {
+#else //__USE_TOUCHSCREEN_H__
+if (true) {
+#endif //__USE_TOUCHSCREEN_H__
     uint8_t fifo; // Number of points in touchscreen FIFO
     bool more = false;
+#if TSC2007_TS
+    Adafruit_TSC2007 *touch = (Adafruit_TSC2007 *)glue->touchscreen;
+#else
     Adafruit_STMPE610 *touch = (Adafruit_STMPE610 *)glue->touchscreen;
+#endif
     // Before accessing SPI touchscreen, wait on any in-progress
     // DMA screen transfer to finish (shared bus).
     disp->dmaWait();
     disp->endWrite();
+#if TSC2007_TS
+    if (! digitalRead(glue->tsc_irq_pin)) {
+      uint16_t x, y, z1, z2;
+      if (touch->read_touch(&x, &y, &z1, &z2) && (z1 > 100)) {
+        TS_Point p;
+        p.x = x;
+        p.y = y;
+        data->state = LV_INDEV_STATE_PR;  // Is PRESSED
+#else
     if ((fifo = touch->bufferSize())) { // 1 or more points await
       data->state = LV_INDEV_STATE_PR;  // Is PRESSED
       TS_Point p = touch->getPoint();
+#endif
       // Serial.printf("%d %d %d\r\n", p.x, p.y, p.z);
-      // On big TFT FeatherWing, raw X axis is flipped??
-      if ((glue->display->width() == 480) || (glue->display->height() == 480)) {
+      // On big TFT FeatherWing and V2 FeatherWings, raw X axis is flipped??
+      if ((glue->display->width() == 480) || (glue->display->height() == 480) || TSC2007_TS) {
         p.x = (TS_MINX + TS_MAXX) - p.x;
       }
       switch (glue->display->getRotation()) {
@@ -204,6 +229,9 @@ static void touchscreen_read(struct _lv_indev_drv_t *indev_drv,
       // doesn't seem to be necessary on SAMD or ESP32. ???
       if (!more) {
         delay(50);
+      }
+#endif
+#if TSC2007_TS
       }
 #endif
     } else {                            // FIFO empty
@@ -292,7 +320,7 @@ Adafruit_LvGL_Glue::~Adafruit_LvGL_Glue(void) {
   // Probably other stuff that could be deallocated here
 }
 
-// begin() function is overloaded for STMPE610 touch, ADC touch, or none.
+// begin() function is overloaded for STMPE610/TSC2007 touch, ADC touch, or none.
 
 // Pass in POINTERS to ALREADY INITIALIZED display & touch objects (user code
 // should have previously called corresponding begin() functions and checked
@@ -301,25 +329,6 @@ Adafruit_LvGL_Glue::~Adafruit_LvGL_Glue(void) {
 // touch arg can be NULL (or left off) if using LittlevGL as a passive widget
 // display.
 
-/**
- * @brief Configure the glue layer and the underlying LvGL code to use the given
- * TFT display driver instance and touchscreen controller
- *
- * @param tft Pointer to an **already initialized** display object instance
- * @param touch Pointer to an **already initialized** `Adafruit_STMPE610`
- * touchscreen controller object instance
- * @param debug Debug flag to enable debug messages. Only used if LV_USE_LOG is
- * configured in LittleLVGL's lv_conf.h
- * @return LvGLStatus The status of the initialization:
- * * LVGL_OK : Success
- * * LVGL_ERR_TIMER : Failure to set up timers
- * * LVGL_ERR_ALLOC : Failure to allocate memory
- */
-LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft,
-                                     Adafruit_STMPE610 *touch, bool debug) {
-  is_adc_touch = false;
-  return begin(tft, (void *)touch, debug);
-}
 /**
  * @brief Configure the glue layer and the underlying LvGL code to use the given
  * TFT display driver and touchscreen controller instances
@@ -334,11 +343,13 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft,
  * * LVGL_ERR_TIMER : Failure to set up timers
  * * LVGL_ERR_ALLOC : Failure to allocate memory
  */
+#ifdef __USE_TOUCHSCREEN_H__
 LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, TouchScreen *touch,
                                      bool debug) {
   is_adc_touch = true;
   return begin(tft, (void *)touch, debug);
 }
+#endif //__USE_TOUCHSCREEN_H__
 /**
  * @brief Configure the glue layer and the underlying LvGL code to use the given
  * TFT display driver and touchscreen controller instances
@@ -355,9 +366,14 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, bool debug) {
   return begin(tft, (void *)NULL, debug);
 }
 
-LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
+#if TSC2007_TS
+LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, Adafruit_TSC2007 *touch,
+                                     u_int16_t irq_pin,
                                      bool debug) {
-
+#else
+LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, Adafruit_STMPE610 *touch,
+                                     bool debug) {
+#endif
   lv_init();
 #if (LV_USE_LOG)
   if (debug) {
@@ -375,6 +391,9 @@ LvGLStatus Adafruit_LvGL_Glue::begin(Adafruit_SPITFT *tft, void *touch,
 
     display = tft;
     touchscreen = (void *)touch;
+#if TSC2007_TS
+    tsc_irq_pin = irq_pin;
+#endif
 
     // Initialize LvGL display buffers. The "second half" buffer is only
     // used if USE_SPI_DMA is enabled in Adafruit_GFX.

@@ -46,7 +46,10 @@
 
 /*1: use custom malloc/free, 0: use the built-in `lv_mem_alloc()` and
  * `lv_mem_free()`*/
+#ifndef LV_MEM_CUSTOM
 #define LV_MEM_CUSTOM 0
+//#define LV_MEM_CUSTOM 1
+#endif //LV_MEM_CUSTOM
 #if LV_MEM_CUSTOM == 0
 /*Size of the memory available for `lv_mem_alloc()` in bytes (>= 2kB)*/
 #define LV_MEM_SIZE (32U * 1024U) /*[bytes]*/
@@ -55,8 +58,10 @@
  * Can be in external SRAM too.*/
 #define LV_MEM_ADR 0 /*0: unused*/
 
+//#define BOARD_HAS_PSRAM // Enable this if using an ESP32 with PSRAM
+
 // For ESP32, give a memory pool allocator and use the PSRAM instead of flash
-#ifdef ESP32
+#if defined(ESP32) && defined (BOARD_HAS_PSRAM)
 #if LV_MEM_ADR == 0
 #define LV_MEM_POOL_INCLUDE <esp32-hal-psram.h>
 #define LV_MEM_POOL_ALLOC ps_malloc
@@ -174,7 +179,9 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
  *problem LV_LOG_LEVEL_ERROR       Only critical issue, when the system may fail
  *LV_LOG_LEVEL_USER        Only logs added by the user
  *LV_LOG_LEVEL_NONE        Do not log anything*/
+#ifndef LV_LOG_LEVEL
 #define LV_LOG_LEVEL LV_LOG_LEVEL_INFO
+#endif //LV_LOG_LEVEL
 
 /*1: Print the log with 'printf';
  *0: User need to register a callback with `lv_log_register_print_cb()`*/
