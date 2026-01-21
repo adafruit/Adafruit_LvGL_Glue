@@ -101,7 +101,7 @@ void TIMER_ISR(void) {
 // TOUCHSCREEN STUFF -------------------------------------------------------
 
 // STMPE610/TSC2007 calibration for raw touch data
-#ifdef TSC2007_TS
+#if TSC2007_TS
 #define TS_MINX 300
 #define TS_MAXX 3800
 #define TS_MINY 185
