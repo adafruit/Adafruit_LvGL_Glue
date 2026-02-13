@@ -64,7 +64,7 @@
 #endif
 
 #else /*LV_MEM_CUSTOM*/
-#define LV_MEM_CUSTOM_INCLUDE                                                  \
+#define LV_MEM_CUSTOM_INCLUDE \
   <stdlib.h> /*Header for the dynamic memory function*/
 #define LV_MEM_CUSTOM_ALLOC malloc
 #define LV_MEM_CUSTOM_FREE free
@@ -90,9 +90,9 @@
  *It removes the need to manually update the tick with `lv_tick_inc()`)*/
 #define LV_TICK_CUSTOM 0
 #if LV_TICK_CUSTOM
-#define LV_TICK_CUSTOM_INCLUDE                                                 \
+#define LV_TICK_CUSTOM_INCLUDE \
   "Arduino.h" /*Header for the system time function*/
-#define LV_TICK_CUSTOM_SYS_TIME_EXPR                                           \
+#define LV_TICK_CUSTOM_SYS_TIME_EXPR \
   (millis()) /*Expression evaluating to current system time in ms*/
 #endif       /*LV_TICK_CUSTOM*/
 
@@ -198,22 +198,22 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 
 /*Enable asserts if an operation is failed or an invalid data is found.
  *If LV_USE_LOG is enabled an error message will be printed on failure*/
-#define LV_USE_ASSERT_NULL                                                     \
+#define LV_USE_ASSERT_NULL \
   1 /*Check if the parameter is NULL. (Very fast, recommended)*/
-#define LV_USE_ASSERT_MALLOC                                                   \
-  1 /*Checks is the memory is successfully allocated or no. (Very fast,        \
+#define LV_USE_ASSERT_MALLOC                                            \
+  1 /*Checks is the memory is successfully allocated or no. (Very fast, \
        recommended)*/
-#define LV_USE_ASSERT_STYLE                                                    \
+#define LV_USE_ASSERT_STYLE \
   0 /*Check if the styles are properly initialized. (Very fast, recommended)*/
-#define LV_USE_ASSERT_MEM_INTEGRITY                                            \
+#define LV_USE_ASSERT_MEM_INTEGRITY \
   0 /*Check the integrity of `lv_mem` after critical operations. (Slow)*/
-#define LV_USE_ASSERT_OBJ                                                      \
+#define LV_USE_ASSERT_OBJ \
   0 /*Check the object's type and existence (e.g. not deleted). (Slow)*/
 
 /*Add a custom handler when assert happens e.g. to restart the MCU*/
 #define LV_ASSERT_HANDLER_INCLUDE <stdint.h>
-#define LV_ASSERT_HANDLER                                                      \
-  while (1)                                                                    \
+#define LV_ASSERT_HANDLER \
+  while (1)               \
     ; /*Halt by default*/
 
 /*-------------
@@ -297,7 +297,7 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 /*Export integer constant to binding. This macro is used with constants in the
  *form of LV_<CONST> that should also appear on LVGL binding API such as
  *Micropython.*/
-#define LV_EXPORT_CONST_INT(int_value)                                         \
+#define LV_EXPORT_CONST_INT(int_value) \
   struct _silence_gcc_warning /*The default value just prevents GCC warning*/
 
 /*Extend the default -32k..32k coordinate range to -4M..4M by using int32_t for
@@ -335,7 +335,7 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 /*Demonstrate special features*/
 #define LV_FONT_MONTSERRAT_12_SUBPX 0
 #define LV_FONT_MONTSERRAT_28_COMPRESSED 0 /*bpp = 3*/
-#define LV_FONT_DEJAVU_16_PERSIAN_HEBREW                                       \
+#define LV_FONT_DEJAVU_16_PERSIAN_HEBREW \
   0 /*Hebrew, Arabic, Perisan letters and all their forms*/
 #define LV_FONT_SIMSUN_16_CJK 0 /*1000 most common CJK radicals*/
 
@@ -444,7 +444,7 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 #define LV_USE_LABEL 1
 #if LV_USE_LABEL
 #define LV_LABEL_TEXT_SELECTION 1 /*Enable selecting text of the label*/
-#define LV_LABEL_LONG_TXT_HINT                                                 \
+#define LV_LABEL_LONG_TXT_HINT \
   1 /*Store some extra info in labels to speed up drawing of very long texts*/
 #endif
 
@@ -452,7 +452,7 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 
 #define LV_USE_ROLLER 1 /*Requires: lv_label*/
 #if LV_USE_ROLLER
-#define LV_ROLLER_INF_PAGES                                                    \
+#define LV_ROLLER_INF_PAGES \
   7 /*Number of extra "pages" when the roller is infinite*/
 #endif
 
@@ -478,18 +478,14 @@ e.g. "stm32f769xx.h" or "stm32f429xx.h"*/
 #if LV_USE_CALENDAR
 #define LV_CALENDAR_WEEK_STARTS_MONDAY 0
 #if LV_CALENDAR_WEEK_STARTS_MONDAY
-#define LV_CALENDAR_DEFAULT_DAY_NAMES                                          \
-  { "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su" }
+#define LV_CALENDAR_DEFAULT_DAY_NAMES {"Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"}
 #else
-#define LV_CALENDAR_DEFAULT_DAY_NAMES                                          \
-  { "Su", "Mo", "Tu", "We", "Th", "Fr", "Sa" }
+#define LV_CALENDAR_DEFAULT_DAY_NAMES {"Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"}
 #endif
 
-#define LV_CALENDAR_DEFAULT_MONTH_NAMES                                        \
-  {                                                                            \
-    "January", "February", "March", "April", "May", "June", "July", "August",  \
-        "September", "October", "November", "December"                         \
-  }
+#define LV_CALENDAR_DEFAULT_MONTH_NAMES                               \
+  {"January", "February", "March",     "April",   "May",      "June", \
+   "July",    "August",   "September", "October", "November", "December"}
 #define LV_USE_CALENDAR_HEADER_ARROW 1
 #define LV_USE_CALENDAR_HEADER_DROPDOWN 1
 #endif /*LV_USE_CALENDAR*/

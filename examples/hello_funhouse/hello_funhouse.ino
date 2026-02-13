@@ -5,10 +5,10 @@
 // Prior Adafruit_LvGL_Glue users: see hello_changes example for updates!
 
 #include <Adafruit_LvGL_Glue.h> // Always include this BEFORE lvgl.h!
-#include <lvgl.h>
 #include <Adafruit_ST7789.h>
+#include <lvgl.h>
 
-Adafruit_ST7789    tft(TFT_CS, TFT_DC, TFT_RESET);
+Adafruit_ST7789 tft(TFT_CS, TFT_DC, TFT_RESET);
 Adafruit_LvGL_Glue glue;
 
 // This example sketch's LittlevGL UI-building calls are all in this
@@ -16,7 +16,7 @@ Adafruit_LvGL_Glue glue;
 // copy-and-paste this sketch as a starting point, then embellish here:
 void lvgl_setup(void) {
   // Create simple label centered on screen
-  lv_obj_t *label = lv_label_create(lv_scr_act());
+  lv_obj_t* label = lv_label_create(lv_scr_act());
   lv_label_set_text(label, "Hello Arduino!");
   lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 }
@@ -31,9 +31,10 @@ void setup(void) {
 
   // Initialize glue, passing in address of display
   LvGLStatus status = glue.begin(&tft);
-  if(status != LVGL_OK) {
+  if (status != LVGL_OK) {
     Serial.printf("Glue error %d\r\n", (int)status);
-    for(;;);
+    for (;;)
+      ;
   }
 
   lvgl_setup(); // Call UI-building function above
