@@ -54,14 +54,14 @@ of UI widgets and so forth.
 */
 
 #include <Adafruit_LvGL_Glue.h> // Glue library header INCLUDE THIS FIRST!
-#include <lvgl.h>               // LittlevGL header
 #include <Adafruit_ST7789.h>    // Display-specific header
+#include <lvgl.h>               // LittlevGL header
 
-#define TFT_CS  1 // Display chip-select pin
-#define TFT_DC  2 // Display data/command pin
+#define TFT_CS 1  // Display chip-select pin
+#define TFT_DC 2  // Display data/command pin
 #define TFT_RST 3 // Display reset pin
 
-Adafruit_ST7789    tft(TFT_CS, TFT_DC, TFT_RST); // TFT on default SPI port
+Adafruit_ST7789 tft(TFT_CS, TFT_DC, TFT_RST); // TFT on default SPI port
 Adafruit_LvGL_Glue glue;
 
 void setup(void) {
@@ -71,9 +71,10 @@ void setup(void) {
 
   // Initialize glue, passing in address of display
   LvGLStatus status = glue.begin(&tft);
-  if(status != LVGL_OK) {
+  if (status != LVGL_OK) {
     Serial.printf("Glue error %d\r\n", (int)status);
-    for(;;);
+    for (;;)
+      ;
   }
 
   // Create simple label centered on screen

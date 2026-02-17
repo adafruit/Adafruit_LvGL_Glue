@@ -9,36 +9,36 @@
 // Prior Adafruit_LvGL_Glue users: see hello_changes example for updates!
 
 #include <Adafruit_LvGL_Glue.h> // Always include this BEFORE lvgl.h!
-#include <lvgl.h>
 #include <TouchScreen.h>
+#include <lvgl.h>
 
-#define TFT_ROTATION   3 // Landscape orientation on PyPortal
-#define TFT_D0        34 // PyPortal TFT pins
-#define TFT_WR        26
-#define TFT_DC        10
-#define TFT_CS        11
-#define TFT_RST       24
-#define TFT_RD         9
+#define TFT_ROTATION 3 // Landscape orientation on PyPortal
+#define TFT_D0 34      // PyPortal TFT pins
+#define TFT_WR 26
+#define TFT_DC 10
+#define TFT_CS 11
+#define TFT_RST 24
+#define TFT_RD 9
 #define TFT_BACKLIGHT 25
-#define YP            A4 // PyPortal touchscreen pins
-#define XP            A5
-#define YM            A6
-#define XM            A7
+#define YP A4 // PyPortal touchscreen pins
+#define XP A5
+#define YM A6
+#define XM A7
 
 #if defined(ADAFRUIT_PYPORTAL_M4_TITANO)
-  #include <Adafruit_HX8357.h>
-  Adafruit_HX8357  tft(tft8bitbus, TFT_D0, TFT_WR, TFT_DC, TFT_CS, TFT_RST,
-    TFT_RD);
+#include <Adafruit_HX8357.h>
+Adafruit_HX8357 tft(tft8bitbus, TFT_D0, TFT_WR, TFT_DC, TFT_CS, TFT_RST,
+                    TFT_RD);
 #else
-  #include <Adafruit_ILI9341.h>
-  Adafruit_ILI9341 tft(tft8bitbus, TFT_D0, TFT_WR, TFT_DC, TFT_CS, TFT_RST,
-    TFT_RD);
+#include <Adafruit_ILI9341.h>
+Adafruit_ILI9341 tft(tft8bitbus, TFT_D0, TFT_WR, TFT_DC, TFT_CS, TFT_RST,
+                     TFT_RD);
 #endif
-TouchScreen        ts(XP, YP, XM, YM, 300);
+TouchScreen ts(XP, YP, XM, YM, 300);
 Adafruit_LvGL_Glue glue;
 
 // This example sketch's LittlevGL UI-building calls are all in this
-// function rather than in setup(), so simple programs can just 
+// function rather than in setup(), so simple programs can just
 // copy-and-paste this sketch as a starting point, then embellish here:
 void lvgl_setup(void) {
   // Create simple label centered on screen
@@ -60,9 +60,10 @@ void setup(void) {
 
   // Initialize glue, passing in address of display & touchscreen
   LvGLStatus status = glue.begin(&tft, &ts);
-  if(status != LVGL_OK) {
+  if (status != LVGL_OK) {
     Serial.printf("Glue error %d\r\n", (int)status);
-    for(;;);
+    for (;;)
+      ;
   }
 
   lvgl_setup(); // Call UI-building function above
