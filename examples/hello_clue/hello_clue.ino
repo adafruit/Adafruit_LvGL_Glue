@@ -5,17 +5,17 @@
 // Prior Adafruit_LvGL_Glue users: see hello_changes example for updates!
 
 #include <Adafruit_LvGL_Glue.h> // Always include this BEFORE lvgl.h!
-#include <lvgl.h>
 #include <Adafruit_ST7789.h>
+#include <lvgl.h>
 
-#define TFT_ROTATION   1 // Landscape orientation on CLUE
-#define TFT_SPI     SPI1 // CLUE display peripheral & pins
-#define TFT_CS        31
-#define TFT_DC        32
-#define TFT_RST       33
+#define TFT_ROTATION 1 // Landscape orientation on CLUE
+#define TFT_SPI SPI1   // CLUE display peripheral & pins
+#define TFT_CS 31
+#define TFT_DC 32
+#define TFT_RST 33
 #define TFT_BACKLIGHT 34
 
-Adafruit_ST7789    tft(&TFT_SPI, TFT_CS, TFT_DC, TFT_RST);
+Adafruit_ST7789 tft(&TFT_SPI, TFT_CS, TFT_DC, TFT_RST);
 Adafruit_LvGL_Glue glue;
 
 // This example sketch's LittlevGL UI-building calls are all in this
@@ -39,9 +39,10 @@ void setup(void) {
 
   // Initialize glue, passing in address of display
   LvGLStatus status = glue.begin(&tft);
-  if(status != LVGL_OK) {
+  if (status != LVGL_OK) {
     Serial.printf("Glue error %d\r\n", (int)status);
-    for(;;);
+    for (;;)
+      ;
   }
 
   lvgl_setup(); // Call UI-building function above

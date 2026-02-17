@@ -22,23 +22,23 @@
 // Always include this BEFORE lvgl.h
 // NOTE: this is Adafruit_LvGL_Glue_SD.h and not Adafruit_LvGL_Glue.h
 #include <Adafruit_LvGL_Glue_SD.h>
-#include <lvgl.h>
 #include <Adafruit_STMPE610.h>
 #include <SdFat.h>
+#include <lvgl.h>
 
 #ifdef ESP32
-#define TFT_CS   15
-#define TFT_DC   33
+#define TFT_CS 15
+#define TFT_DC 33
 #define STMPE_CS 32
-#define SD_CS    14
+#define SD_CS 14
 #else
-#define TFT_CS    9
-#define TFT_DC   10
-#define STMPE_CS  6
-#define SD_CS     5
+#define TFT_CS 9
+#define TFT_DC 10
+#define STMPE_CS 6
+#define SD_CS 5
 #endif
 #define TFT_ROTATION 1 // Landscape orientation on FeatherWing
-#define TFT_RST     -1
+#define TFT_RST -1
 
 #if BIG_FEATHERWING
 #include <Adafruit_HX8357.h>
@@ -76,22 +76,25 @@ void setup(void) {
   // Initialize display and touchscreen BEFORE glue setup
   tft.begin();
   tft.setRotation(TFT_ROTATION);
-  if(!ts.begin()) {
+  if (!ts.begin()) {
     Serial.println("Couldn't start touchscreen controller");
-    for(;;);
+    for (;;)
+      ;
   }
 
   // SD controller needs to be initialized before starting Glue
   if (!sd.begin(SD_CS, SD_SCK_MHZ(25))) { // ESP32 requires 25 MHz limit
     Serial.println("Couldn't start SD card controller");
-    for(;;);
+    for (;;)
+      ;
   }
 
   // Initialize glue, passing in address of display, touchscreen & SD controller
   LvGLStatus status = glue.begin(&tft, &ts, &sd);
-  if(status != LVGL_OK) {
+  if (status != LVGL_OK) {
     Serial.printf("Glue error %d\r\n", (int)status);
-    for(;;);
+    for (;;)
+      ;
   }
 
   lvgl_setup(); // Call UI-building function above

@@ -222,9 +222,9 @@ static void touchscreen_read(struct _lv_indev_drv_t *indev_drv,
 #pragma error("LV_COLOR_DEPTH must be 16")
 #endif
 // This isn't necessarily true, don't mention it for now. See notes later.
-//#if LV_COLOR_16_SWAP != 0
+// #if LV_COLOR_16_SWAP != 0
 //  #pragma message("Set LV_COLOR_16_SWAP to 0 for best display performance")
-//#endif
+// #endif
 
 // Actual RAM usage will be 2X these figures, since using 2 DMA buffers...
 #ifdef _SAMD21_
