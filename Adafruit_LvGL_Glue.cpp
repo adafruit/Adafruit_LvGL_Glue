@@ -107,10 +107,18 @@ void TIMER_ISR(void) {
 #define TS_MAXY 3750
 
 // Same, for ADC touchscreen
+#ifndef ADC_XMIN
 #define ADC_XMIN 325
+#endif
+#ifndef ADC_XMAX
 #define ADC_XMAX 750
+#endif
+#ifndef ADC_YMIN
 #define ADC_YMIN 240
+#endif
+#ifndef ADC_YMAX
 #define ADC_YMAX 840
+#endif
 
 static void touchscreen_read(struct _lv_indev_drv_t *indev_drv,
                              lv_indev_data_t *data) {
